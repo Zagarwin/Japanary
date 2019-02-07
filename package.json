@@ -1,0 +1,15 @@
+{
+  "name": "japanary",
+  "version": "1.0.0",
+  "description": "the japanary",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "augustin",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.16.4",
+    "socket.io": "^2.2.0"
+  }
+}
