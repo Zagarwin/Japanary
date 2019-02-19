@@ -11,7 +11,7 @@
 
 <body>
 
-<div id="login">
+<div id="login" style="display: none;">
 <p>Choose your nickname : <br>
             <input type="text" id="nickname" placeholder="Enter your nickname" size="30">
             <input type="button" value="Join a Party" id="btnJoin"> <br>
@@ -21,6 +21,56 @@
 
 <div id="lobby" style="display: none;">
 </div>
+
+<div id="choosingAlphabet" style="display: none;">
+  <div id="choix">
+  </div>
+</div>
+
+
+
+<form id="options">
+    <div>
+        <p>Alphabet :</p>
+        <label><input type="radio" name="radGlyphe" value="hiragana" checked> hiragana</label>
+        <label><input type="radio" name="radGlyphe" value="katakana"> katakana</label>
+        <label><input type="radio" name="radGlyphe" value="les2"> les deux</label>
+    </div>
+    
+<!--     <div hidden>
+        <label><input type="checkbox" value="[aiueon]" checked disabled> a, i, u, e, o, n</label>
+    </div> -->
+    <div>
+        <p>Suffixes :</p> 
+        <label><input type="checkbox" value="[b-z]{1,2}a"> .a</label>
+        <label><input type="checkbox" value="[b-z]{1,2}i"> .i</label>
+        <label><input type="checkbox" value="[b-z]{1,2}u"> .u</label>
+        <label><input type="checkbox" value="[b-z]{1,2}e"> .e</label>
+        <label><input type="checkbox" value="[b-z]{1,2}o"> .o</label>
+    </div>
+    <div>
+        <p>Préfixes :</p> 
+        <table>
+            <tr>
+                <td><label><input type="checkbox" value="[kg][aiueo]"> k. g.</label></td>
+                <td><label><input type="checkbox" value="[kzj].?[aiueo]"> s. z.</label></td>
+                <td><label><input type="checkbox" value="[tcd].?[aiueo]"> t. d.</label></td>
+            </tr>
+            <tr>
+                <td><label><input type="checkbox" value="n[aiueo]"> n.</label></td>
+                <td><label><input type="checkbox" value="[hfbp][aiueo]"> h./f. b. p.</label></td>
+                <td><label><input type="checkbox" value="m[aiueo]"> m.</label></td>
+            </tr>
+            <tr>
+                <td><label><input type="checkbox" value="y[aiueo]"> y.</label></td>
+                <td><label><input type="checkbox" value="r[aiueo]"> r.</label></td>
+                <td><label><input type="checkbox" value="w[aiueo]"> w.</label></td>
+            </tr>
+        </table>
+    </div>
+</form>
+
+
 
 <div id="settings" style="display: none;">
 <p> New Game : <br>

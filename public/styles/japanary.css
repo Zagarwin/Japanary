@@ -1,0 +1,40 @@
+*{
+    margin: 0;
+    padding: 0;
+}
+
+#choosingAlphabet{
+    position:absolute;
+    left:0;
+    top:0;
+    height:100%;
+    width:100%;
+    padding: 0;
+    margin: 0;
+    font-family: verdana, sans-serif; 
+    background-image: url(../images/background.jpg);
+    background-attachment: fixed;
+    background-size: cover;
+    background-position: center;
+}
+
+
+#choix {
+    margin-top: 80vh;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+    align-items: center;
+    align-content: flex-start;
+}
+
+#choix button{
+	left:5;
+	right:5;
+	top:3;
+	width: 50px;
+	height: 30px;
+	opacity:0.8;
+
+}
+
