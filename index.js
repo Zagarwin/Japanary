@@ -19,7 +19,7 @@ app.get('/', function(req, res) {
 
 /*** Gestion des clients et des connexions ***/
 var clients = {};       // id -> socket
-var games = {};
+var games = [];
 
 // Quand un client se connecte, on le note dans la console
 io.on('connection', function (socket) {
@@ -49,8 +49,15 @@ io.on('connection', function (socket) {
     });*/
     
     socket.on("new_game", function(new_game) {
-	
+	console.log("game pushed");
+	games.push(new_game);
     });
+
+
+   socket.on("get_lobby", function() {
+	console.log("games sended");
+	socket.emit("lobby", games);
+   });
    
     
     
