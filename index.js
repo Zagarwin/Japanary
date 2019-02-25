@@ -19,7 +19,7 @@ app.get('/', function(req, res) {
 
 /*** Gestion des clients et des connexions ***/
 var clients = {};       // id -> socket
-var games = {};
+var games = [];
 var nbSameName = 1;
 var gameTest = new Game(123456);
 games[gameTest.id]=gameTest;
@@ -54,7 +54,8 @@ io.on('connection', function (socket) {
     });
     
     socket.on("new_game", function(new_game) {
-	
+	console.log("game pushed");
+	games.push(new_game);
     });
 
     socket.on("begin", function(){
@@ -62,6 +63,11 @@ io.on('connection', function (socket) {
         socket.emit("initClient", gameTest);
         console.log("Game is parti");
     });
+
+   socket.on("get_lobby", function() {
+	console.log("games sended");
+	socket.emit("lobby", games);
+   });
    
    socket.on("command",function(command){
         socket.emit("command2clients",command);
