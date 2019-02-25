@@ -428,39 +428,78 @@ var socket=io.connect();
 var clients = [];
 
 
-document.getElementById("btnJoin").addEventListener("click", function() {
-	id = document.getElementById("nickname").value;
-	if (id == "") {
-		return;
-	}
-	socket.emit("login", id);
-	socket.on("loginReturn",function(idFinal){
-		id=idFinal;
-		document.getElementById("login").innerHTML = id;
-	});
-	document.getElementById("content").style.display = "block";
-	document.getElementById("login").innerHTML = id;
-});
 
 document.getElementById("btnCreate").addEventListener("click", function() {
 	id = document.getElementById("nickname").value;
 	if (id == "") {
 		return;
 	}
-	document.getElementById("settings").style.display = "block";
-	document.getElementById("login").style.display = "none";
+	select_pane("settings");
 	create_game_listener();
 });
 
 function create_game_listener() {
 	document.getElementById("btnConfirmCreate").addEventListener("click", function() {
-		var new_game = { owner : id, alphabet : undefined, max_delay : 0,  laps_number : 0, is_private : false };
+		var new_game = { owner : id, alphabet : undefined, delay : 0,  laps : 0, is_private : false };
 		/*
 			Init fields
-		*/		
+		*/	
+		console.log("game client-created");	
 		socket.emit("new_game", new_game);			
 	});
-} 
+}
+
+document.getElementById("btnJoin").addEventListener("click", function() {
+	id = document.getElementById("nickname").value;
+	if (id == "") {
+		return;
+	}
+	lobby_call();
+});
+
+function select_pane(pane) {
+	var panes = ["login","settings","lobby","content","choosingAlphabet"];
+	if (!panes.includes(pane)) { return; }
+	panes.forEach(function(element) {
+		var modif;
+  		if (element == pane) {
+			modif = "block";
+		}
+		else {
+			modif = "none";
+		}
+		document.getElementById(element).style.display = modif;
+	});
+}
+
+function lobby_display(games) {
+	document.getElementById("lobby").innerHTML = "<table>";
+	var l_size = games.length;
+	for (var i = 0; i < l_size; i++) {
+		game_display(games[i]);
+	}
+	document.getElementById("lobby").innerHTML += "</table>";
+}
+
+function game_display(game) {
+	var html_id = "game_" + game.id;
+	var game_view = "<tr><div id=\"" + html_id + "\">";
+	game_view += "<p> Owner: " + game.owner + " | Alphabet: " + game.alphabet + " | Speed: " + game.delay + " | Duration: " + game.laps + "</p>";
+	game_view += "</div></tr>";
+	document.getElementById("lobby").innerHTML += game_view;
+	document.getElementById(html_id).addEventListener("click", function() {
+		console.log("game clicked!");
+		socket.emit("game_connect", { player : id, game : game.id });
+	});
+}
+
+function lobby_call() {
+	select_pane("lobby");
+	socket.emit("get_lobby");
+	socket.on("lobby", function(games) {
+		lobby_display(games);
+	});
+}
 
 document.getElementById("gameTest").addEventListener("click", function(){
 	socket.emit("beginTest");
@@ -479,6 +518,7 @@ document.getElementById("gameTest").addEventListener("click", function(){
 });
 
 }
+
 
 
 

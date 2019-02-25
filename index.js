@@ -55,9 +55,8 @@ io.on('connection', function (socket) {
         // envoi de la nouvelle liste à tous les clients connectés 
     });
     
-    socket.on("new_game", function(new_game) {
-	console.log("game pushed");
-	games.push(new_game);
+    socket.on("new_game", function(data) {
+	init_game(data);
     });
 
     socket.on("beginTest", function(){
@@ -75,6 +74,10 @@ io.on('connection', function (socket) {
         socket.emit("command2clients",command);
    });
     
+   socket.on("game_connect", function(whowhere) {
+	console.log("Player (" + whowhere.player + ") connected to : " + whowhere.game);
+	
+   });
     
 });
 
@@ -84,15 +87,30 @@ function Person(name){
 
 }
 
+var max_id = 0;
 
-function Game(number){
-    this.persons=[];
-    this.id = number;
+function init_game(data) {
+	var new_game = new Game();
+	new_game.owner = data.owner;
+	new_game.delay = data.delay;
+	new_game.laps = data.laps;
+	new_game.alphabet = data.alphabet;
+	games.push(new_game);
+}
+
+function Game(){
+
+    this.owner = null;
+    this.players=[];
+    this.id = max_id++;
     this.painter = null;
     this.numberContinue = 0;
+    this.delay = 0;
+    this.laps = 0;
+    this.alphabet = null;
 
     this.addPerson=function(p){
-        this.persons.push(p);
+        this.players.push(p);
     };
 
     this.hasPerson=function(name){
