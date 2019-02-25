@@ -9,6 +9,18 @@
 // };
 
 document.addEventListener("DOMContentLoaded", function(e) {
+	var sock = io.connect();
+	var gameCurrent = null;
+    sock.on("message", function(msg) {
+        if (currentUser) {
+            afficherMessage(msg);
+        }
+    });
+    sock.on("liste", function(liste) {
+        if (currentUser) {
+            afficherListe(liste);
+        }
+    });
     
     var dessin = document.getElementById("dessin");
     var overlay = document.getElementById("overlay");
