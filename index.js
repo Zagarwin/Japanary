@@ -1,7 +1,7 @@
 // Chargement des modules 
 var express = require('express');
 var app = express();
-var server = app.listen(8000, function() {
+var server = app.listen(8080, function() {
     console.log("C'est parti ! En attente de connexion sur le port 8080...");
 });
 
@@ -36,21 +36,23 @@ io.on('connection', function (socket) {
      *  @param  id  string  l'identifiant saisi par le client
      */
     socket.on("login", function(id) {
-        if (clients[id]) {
-            id = id + "("+nbSameName+")";
-            nbSameName++;   
+        while (clients[id]) {
+            id = id + parseInt(Math.random()*999);  
+
         }
         currentID = id;
         currentPerson = new Person(currentID);
+        console.log("add client "+currentID);
         clients[currentID] = currentPerson;
         gameTest.addPerson(currentPerson);
+
+        socket.emit("loginReturn",currentID);
 
         
         console.log("Nouvel utilisateur : " + currentID);
         // envoi aux autres clients 
         // socket.broadcast.emit("message", { from: null, to: null, text: currentID + " a rejoint la discussion", date: Date.now() } );
         // envoi de la nouvelle liste à tous les clients connectés 
-        io.sockets.emit("liste", Object.keys(clients));
     });
     
     socket.on("new_game", function(new_game) {
@@ -58,7 +60,7 @@ io.on('connection', function (socket) {
 	games.push(new_game);
     });
 
-    socket.on("begin", function(){
+    socket.on("beginTest", function(){
         gameTest.choosePainter();
         socket.emit("initClient", gameTest);
         console.log("Game is parti");

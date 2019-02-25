@@ -9,18 +9,6 @@
 // };
 
 document.addEventListener("DOMContentLoaded", function(e) {
-	var sock = io.connect();
-	var gameCurrent = null;
-    sock.on("message", function(msg) {
-        if (currentUser) {
-            afficherMessage(msg);
-        }
-    });
-    sock.on("liste", function(liste) {
-        if (currentUser) {
-            afficherListe(liste);
-        }
-    });
     
     var dessin = document.getElementById("dessin");
     var overlay = document.getElementById("overlay");
@@ -262,7 +250,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
             btnFermer.id = "fermer";
             btnFermer.addEventListener("click", filemanager.fermer.bind(filemanager), false);
             modal.appendChild(btnFermer);
-            modal.style.display = "none";   
+            modal.style.display = "block";   
         }
 
     }
@@ -295,7 +283,7 @@ var choose = {
 		var doc = document.getElementById("choix");
 		var docHtml = "<table><tr>";
 		for(var i=0; i<size; i++){
-			document.getElementById("choosingAlphabet").style.display="none";
+			document.getElementById("choosingAlphabet").style.display="block";
 			if(i%16==0 && i>0){
 				docHtml += "</tr><tr>";
 			}
@@ -420,7 +408,10 @@ function Glyphes(glyphes) {
 }
 
 
-//choose.initGlyphes();
+// choose.initGlyphes();
+
+
+
 // setTimeout( function(){
 // }, 1 * 1000 );
 // console.log(choose.objGlyphes.getAllGlyphes("les2"));
@@ -433,20 +424,20 @@ function Glyphes(glyphes) {
 
 var id;
 var msg;
-var socket;
+var socket=io.connect();
 var clients = [];
 
-socket = io.connect('http://localhost:8000');
-
-
-document.getElementById("options").style.display = "none";
 
 document.getElementById("btnJoin").addEventListener("click", function() {
 	id = document.getElementById("nickname").value;
 	if (id == "") {
 		return;
 	}
-
+	socket.emit("login", id);
+	socket.on("loginReturn",function(idFinal){
+		id=idFinal;
+		document.getElementById("login").innerHTML = id;
+	});
 	document.getElementById("content").style.display = "block";
 	document.getElementById("login").innerHTML = id;
 });
@@ -461,37 +452,31 @@ document.getElementById("btnCreate").addEventListener("click", function() {
 	create_game_listener();
 });
 
-document.getElementById("btnJoin").addEventListener("click", function() {
-	document.getElementById("login").style.display = "none";
-	lobby_call();
-});
-
-function lobby_call() {
-	document.getElementById("lobby").style.display = "block";
-	socket.emit("get_lobby");
-	socket.on("lobby", function(games) {
-		var lobby_view = "<table>";
-		var l_size = games.length;
-		console.log(l_size);
-		for (var i = 0; i < l_size; i++) {
-			var game_view = "<p> Owner: " + games[i].owner + " | Alphabet: " + games[i].alphabet + " | Speed: " + games[i].max_delay + " | Duration: " + games[i].laps_number + "</p>";
-			lobby_view += "<tr>" + game_view + "</tr>";
-		}
-		lobby_view += "</table>";
-		document.getElementById("lobby").innerHTML = lobby_view;
-	});
-}
-
 function create_game_listener() {
 	document.getElementById("btnConfirmCreate").addEventListener("click", function() {
 		var new_game = { owner : id, alphabet : undefined, max_delay : 0,  laps_number : 0, is_private : false };
 		/*
 			Init fields
 		*/		
-		console.log("ha");
 		socket.emit("new_game", new_game);			
 	});
 } 
+
+document.getElementById("gameTest").addEventListener("click", function(){
+	socket.emit("beginTest");
+	socket.on("initClient",function(game){
+		if(!game.hasPerson(id)){
+			return;
+		}
+		if(id==game.painter){
+
+		}
+		else{
+			
+		}
+	});
+
+});
 
 }
 
