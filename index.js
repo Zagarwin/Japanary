@@ -37,7 +37,7 @@ io.on('connection', function (socket) {
      */
     socket.on("login", function(id) {
         while (clients[id]) {
-            id = id + parseInt(Math.random()*999);  
+            id = id + "_";  
 
         }
         currentID = id;
@@ -57,6 +57,7 @@ io.on('connection', function (socket) {
     
     socket.on("new_game", function(data) {
 	init_game(data);
+	socket.emit("new_game_return", data.owner);
     });
 
     socket.on("beginTest", function(){
@@ -76,7 +77,7 @@ io.on('connection', function (socket) {
     
    socket.on("game_connect", function(whowhere) {
 	console.log("Player (" + whowhere.player + ") connected to : " + whowhere.game);
-	
+	games[whowhere.game].connectPlayer(clients[whowhere.player]);
    });
     
 });
@@ -89,12 +90,17 @@ function Person(name){
 
 var max_id = 0;
 
+function send_game_data(player, game) {
+	socket.emit("game_data", { player : player, game : game });
+}
+
 function init_game(data) {
 	var new_game = new Game();
 	new_game.owner = data.owner;
 	new_game.delay = data.delay;
 	new_game.laps = data.laps;
 	new_game.alphabet = data.alphabet;
+	new_game.connectPlayer(clients[data.owner]);
 	games.push(new_game);
 }
 
@@ -102,6 +108,7 @@ function Game(){
 
     this.owner = null;
     this.players=[];
+    this.max_players = 5;
     this.id = max_id++;
     this.painter = null;
     this.numberContinue = 0;
@@ -124,6 +131,13 @@ function Game(){
 
     this.choosePainter=function(){
         this.painter=this.persons[this.numberContinue%this.persons.size];
+    }
+
+    this.connectPlayer=function(player){
+	if (this.players.length >= this.max_players) {
+		return;
+	}
+	this.players.push(player);
     }
 
 

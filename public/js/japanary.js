@@ -345,7 +345,6 @@ var choose = {
 
 
 
-
 /**
  *  Classe représentant l'ensemble des glyphes
  */
@@ -434,6 +433,7 @@ document.getElementById("btnCreate").addEventListener("click", function() {
 	if (id == "") {
 		return;
 	}
+	connect(id);
 	select_pane("settings");
 	create_game_listener();
 });
@@ -445,7 +445,7 @@ function create_game_listener() {
 			Init fields
 		*/	
 		console.log("game client-created");	
-		socket.emit("new_game", new_game);			
+		socket.emit("new_game", new_game);	
 	});
 }
 
@@ -454,8 +454,17 @@ document.getElementById("btnJoin").addEventListener("click", function() {
 	if (id == "") {
 		return;
 	}
+	connect(id);
 	lobby_call();
 });
+
+function connect(player_id) {
+	socket.emit("login", player_id);
+	socket.on("loginReturn",function(real_id){
+		id = real_id;
+		console.log("You connected as " + id);
+	});
+}
 
 function select_pane(pane) {
 	var panes = ["login","settings","lobby","content","choosingAlphabet"];
@@ -473,24 +482,25 @@ function select_pane(pane) {
 }
 
 function lobby_display(games) {
-	document.getElementById("lobby").innerHTML = "<table>";
 	var l_size = games.length;
 	for (var i = 0; i < l_size; i++) {
 		game_display(games[i]);
 	}
-	document.getElementById("lobby").innerHTML += "</table>";
 }
 
 function game_display(game) {
 	var html_id = "game_" + game.id;
-	var game_view = "<tr><div id=\"" + html_id + "\">";
-	game_view += "<p> Owner: " + game.owner + " | Alphabet: " + game.alphabet + " | Speed: " + game.delay + " | Duration: " + game.laps + "</p>";
-	game_view += "</div></tr>";
-	document.getElementById("lobby").innerHTML += game_view;
-	document.getElementById(html_id).addEventListener("click", function() {
+	var game_tab = document.getElementById("lobby");
+	var game_cell = document.createElement("tr");
+	game_cell.setAttribute("id", html_id);
+	game_cell.innerHTML = "<p> Owner: " + game.owner + " | Alphabet: " + game.alphabet + " | Speed: " + game.delay + " | Duration: " + game.laps + " | Players: " + game.players.length + "/" + game.max_players + "</p>";
+	game_tab.appendChild(game_cell);	
+	game_cell.onclick = dynamic_game_click;
+	function dynamic_game_click() {
 		console.log("game clicked!");
 		socket.emit("game_connect", { player : id, game : game.id });
-	});
+	}
+	
 }
 
 function lobby_call() {
@@ -500,6 +510,12 @@ function lobby_call() {
 		lobby_display(games);
 	});
 }
+
+socket.on("game_data", function(data){
+	if (data.player == id) {
+		// Définir affichage de jeu avec data.game
+	}	
+});
 
 document.getElementById("gameTest").addEventListener("click", function(){
 	socket.emit("beginTest");

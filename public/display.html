@@ -19,10 +19,8 @@
 </p>
 </div>
 
-<div id="lobby" style="display: none;">
-</div>
-
-
+<table id="lobby" style="display: none;">
+</table>
 
 <div id="choosingAlphabet" style="display: none;">
   <div id="content">     
@@ -42,10 +40,20 @@
   </div>
 </div>
 
+<div id="settings" style="display: none;">
+<p> New Game : <br>
+Max Delay :
+<input type="number" id="delay" min="5" max="60" step = "5">
+<br>
+Laps number : 
+<input type="number" id="laps" min="3" max="50">
+<br>
+ <form>
+  <input type="radio" name="is_private" value="false" checked> Public<br>
+  <input type="radio" name="is_private" value="true"> Private<br>
+</form> <br>
 
-
-<form id="options" style="display: none">
-    <div>
+ <div>
         <p>Alphabet :</p>
         <label><input type="radio" name="radGlyphe" value="hiragana" checked> hiragana</label>
         <label><input type="radio" name="radGlyphe" value="katakana"> katakana</label>
@@ -82,28 +90,6 @@
             </tr>
         </table>
     </div>
-</form>
-
-
-
-<div id="settings" style="display: none;">
-<p> New Game : <br>
-Alphabet : 
- <form>
-  <input type="radio" name="alphabet" value="hirigana" checked> Hirigana<br>
-  <input type="radio" name="alphabet" value="katagana"> Katagana<br>
-</form> 
-<br>
-Max Delay :
-<input type="number" id="delay" min="5" max="60" step = "5">
-<br>
-Laps number : 
-<input type="number" id="laps" min="3" max="50">
-<br>
- <form>
-  <input type="radio" name="is_private" value="false" checked> Public<br>
-  <input type="radio" name="is_private" value="true"> Private<br>
-</form> <br>
 <input type="button" value="Create" id="btnConfirmCreate">
 </div>
 
