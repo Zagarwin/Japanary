@@ -22,7 +22,7 @@ var clients = {};       // id -> socket
 var games = [];
 var nbSameName = 1;
 var gameTest = new Game(123456);
-games[gameTest.id]=gameTest;
+// games[gameTest.id]=gameTest;
 
 // Quand un client se connecte, on le note dans la console
 io.on('connection', function (socket) {
