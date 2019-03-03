@@ -9,55 +9,55 @@
 // };
 
 document.addEventListener("DOMContentLoaded", function(e) {
-    
+
     var dessin = document.getElementById("dessin");
     var overlay = document.getElementById("overlay");
-    
+
     var act = function(f, e) {
         var rect = dessin.getBoundingClientRect();
         var x = e.clientX - rect.left;
         var y = e.clientY - rect.top;
         f.call(currentCommand, x, y);
     }
-    
+
     overlay.addEventListener("mousemove", function(e) {
-        act(currentCommand.move, e); 
+        act(currentCommand.move, e);
     });
     overlay.addEventListener("mousedown", function(e) {
-        act(currentCommand.down, e); 
-    });    
+        act(currentCommand.down, e);
+    });
     overlay.addEventListener("mouseup", function(e) {
-        act(currentCommand.up, e); 
-    });                      
+        act(currentCommand.up, e);
+    });
     overlay.addEventListener("mouseout", function(e) {
-        act(currentCommand.out, e); 
-    });                 
-    
-    
+        act(currentCommand.out, e);
+    });
+
+
     var ctxBG = dessin.getContext("2d");
     var ctxFG = overlay.getContext("2d");
-    
+
     document.getElementById("new").addEventListener("click", function(e) {
-        ctxBG.clearRect(0, 0, ctxBG.width, ctxBG.height); 
+        ctxBG.clearRect(0, 0, ctxBG.width, ctxBG.height);
     });
-    
 
 
-    // Tailles des zones 
+
+    // Tailles des zones
     overlay.width = dessin.width = ctxBG.width = ctxFG.width = 500;
     overlay.height = dessin.height = ctxBG.height = ctxFG.height = 500;
     // Taille du crayon
     ctxBG.lineCap = ctxFG.lineCap = "round";
-    
-    
+
+
     /**
      *  Prototype de commande (classe abstraite)
      */
-    function Commande() { 
+    function Commande() {
         // bouton cliqué
         this.isDown = false;
-        // fillStyle pour le dessin 
-        this.fsBG = "white", 
+        // fillStyle pour le dessin
+        this.fsBG = "white",
         // fillStyle pour le calque
         this.fsFG = "white";
         // strokeStyle pour le dessin
@@ -67,37 +67,37 @@ document.addEventListener("DOMContentLoaded", function(e) {
     }
     // selection (paramétrage des styles)
     Commande.prototype.select = function() {
-        ctxBG.fillStyle = this.fsBG; 
-        ctxFG.fillStyle = this.fsFG; 
+        ctxBG.fillStyle = this.fsBG;
+        ctxFG.fillStyle = this.fsFG;
         ctxBG.strokeStyle = this.ssBG;
         ctxFG.strokeStyle = this.ssFG;
         currentCommand = this;
     };
     // action liée au déplacement de la souris
-    Commande.prototype.move = function(x, y) { 
+    Commande.prototype.move = function(x, y) {
         ctxFG.clearRect(0, 0, ctxFG.width, ctxFG.height);
     };
     // action liée au relâchement du bouton de la souris
-    Commande.prototype.up = function(x, y) { 
+    Commande.prototype.up = function(x, y) {
         this.isDown = false;
     };
     // action liée à l'appui sur le bouton de la souris
-    Commande.prototype.down = function(x, y) { 
+    Commande.prototype.down = function(x, y) {
         this.isDown = true;
-    }; 
+    };
     // action liée à la sortie de la souris de la zone
     Commande.prototype.out = function() {
         this.isDown = false;
         ctxFG.clearRect(0, 0, ctxFG.width, ctxFG.height);
     };
-    
-    
-    /** 
+
+
+    /**
      *  Commande pour tracer (dessine un point)
-     *      au survol : affichage d'un point 
-     *      au clic : dessin du point 
+     *      au survol : affichage d'un point
+     *      au clic : dessin du point
      */
-    var tracer = new Commande();     
+    var tracer = new Commande();
     tracer.dessiner = function(ctx, x, y) {
         ctx.beginPath();
         ctx.arc(x, y, size.value/2, 0, 2*Math.PI);
@@ -106,7 +106,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
     tracer.move = function(x, y) {
         // appel classe mère
         this.__proto__.move.call(this, x, y);
-        // affichage sur le calque 
+        // affichage sur le calque
         this.dessiner(ctxFG, x, y);
         // si bouton cliqué : impression sur la zone de dessin
         if (this.isDown) {
@@ -119,11 +119,11 @@ document.addEventListener("DOMContentLoaded", function(e) {
         // impression sur la zone de dessin
         this.dessiner(ctxBG, x, y);
     }
-    
-    
-    /** 
+
+
+    /**
      *  Commande pour gommer (effacer une zone)
-     *      au survol : affichage d'un rectangle représentant la zone à effacer 
+     *      au survol : affichage d'un rectangle représentant la zone à effacer
      *      au clic : effacement de la zone
      */
     var gommer = new Commande();
@@ -140,14 +140,14 @@ document.addEventListener("DOMContentLoaded", function(e) {
         ctxFG.strokeRect(x - size.value/2, y - size.value/2, size.value, size.value);
     }
     gommer.down = function(x, y) {
-        this.__proto__.down.call(this, x, y);    
+        this.__proto__.down.call(this, x, y);
         gommer.effacer(x,y);
     }
 
-    
-    /** 
+
+    /**
      *  Commande pour tracer une ligne
-     *      au survol si clic appuyé : ombrage de la ligne entre le point de départ et le point courant. 
+     *      au survol si clic appuyé : ombrage de la ligne entre le point de départ et le point courant.
      *      au relâchement du clic : tracé de la ligne sur la zone de dessin
      */
     var ligne = new Commande();
@@ -177,10 +177,10 @@ document.addEventListener("DOMContentLoaded", function(e) {
         this.dessiner(ctxBG, x, y);
     }
 
-    
-    
-    
-    /** 
+
+
+
+    /**
      *  Affectation des événements sur les boutons radios
      *  et detection du bouton radio en cours de sélection.
      */
@@ -188,26 +188,26 @@ document.addEventListener("DOMContentLoaded", function(e) {
     for (var i=0; i < radios.length; i++) {
         var selection = function() {
             if (this.checked) {
-                currentCommand = eval(this.id);  
+                currentCommand = eval(this.id);
                 currentCommand.select();
-            }            
+            }
         }
         selection.apply(radios.item(i));
         radios.item(i).addEventListener("change", selection);
     }
-    
-    /** 
+
+    /**
      *  Objet permettant de gérer les dessins enregistrés dans le localStorage
-     *  Les dessins sont enregistrés à l'item "logos" du localStorage, sous la 
-     *  forme d'un objet où la clé est le nom de l'image et la valeur son dessin. 
+     *  Les dessins sont enregistrés à l'item "logos" du localStorage, sous la
+     *  forme d'un objet où la clé est le nom de l'image et la valeur son dessin.
      */
     if (! localStorage.getItem("logos")) {      // verification d'usage
-        localStorage.setItem("logos", JSON.stringify({}));   
+        localStorage.setItem("logos", JSON.stringify({}));
     }
     var filemanager = {
-        
+
         /**
-         *  Afficher le gestionnaire de dessin : liste les dessins existants et 
+         *  Afficher le gestionnaire de dessin : liste les dessins existants et
          *      donne la possibilité de les ouvrir ou de les supprimer.
          */
         afficher: function() {
@@ -250,7 +250,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
             btnFermer.id = "fermer";
             btnFermer.addEventListener("click", filemanager.fermer.bind(filemanager), false);
             modal.appendChild(btnFermer);
-            modal.style.display = "block";   
+            modal.style.display = "block";
         }
 
     }
@@ -268,7 +268,7 @@ window.onload = function() {
 
 
 
-//Object for choose 
+//Object for choose
 var choose = {
 	chance : 3,
 	objGlyphes : null,
@@ -287,7 +287,7 @@ var choose = {
 			if(i%16==0 && i>0){
 				docHtml += "</tr><tr>";
 			}
-			docHtml += "<td><button id=choixx"+glyphes[i]['ascii']+">"+glyphes[i]["key"]+" </button></td>"; 
+			docHtml += "<td><button id=choixx"+glyphes[i]['ascii']+">"+glyphes[i]["key"]+" </button></td>";
 		}
 		docHtml += "</tr></table>";
 		doc.innerHTML += docHtml;
@@ -318,13 +318,13 @@ var choose = {
 	// updateResult: function(){
 	// 	document.getElementById("choixx"+result).className="correct";
 	// }
-	
+
 
 
 	initGlyphes: async function(alphabet){
-		if (typeof fetch !== undefined) {       
+		if (typeof fetch !== undefined) {
 		    // avec des promesses et l'instruction fetch
-		    var response = await fetch("./json/alphabet.json"); 
+		    var response = await fetch("./json/alphabet.json");
 		    if (response.status == 200) {
 		        var data = await response.json();
 		        this.objGlyphes = new Glyphes(data);
@@ -349,8 +349,8 @@ var choose = {
  *  Classe représentant l'ensemble des glyphes
  */
 function Glyphes(glyphes) {
-    
-    /** 
+
+    /**
      *  Clés des glyphes éligibles par rapport aux options actuellement sélectionnées
      *  (fonction privée -- interne à la classe)
      */
@@ -364,7 +364,7 @@ function Glyphes(glyphes) {
 	                // on vérifie si la clé (elem) matche la regex définie comme valeur de la checkbox
 	                var patt = new RegExp("\\b" + cbs[i].value + "\\b", "g");
 	                if (patt.test(elem)) {
-	                    return true;   
+	                    return true;
 	                }
 	            }
 	            return false;
@@ -374,18 +374,18 @@ function Glyphes(glyphes) {
 	        }
         });
     }
-    
-    
-    /** 
+
+
+    /**
      *  Choisit trois glyphes différents entre elles et différentes de celle dont la clé
      *  est passée en paramètre
-     *  @param old          String  clé du glyphe 
+     *  @param old          String  clé du glyphe
      *  @param alphabet     String  alphabet considéré
      */
     this.getAllGlyphes = function(alphabet) {
     	if (alphabet == "les2") {
             alphabet = (Math.random() < 0.5) ? 'hiragana' : 'katakana';
-            console.log(alphabet);   
+            console.log(alphabet);
         }
         var eligible = getGlyphKeys(alphabet);
         var aTrouver = [];
@@ -401,7 +401,7 @@ function Glyphes(glyphes) {
             // aTrouver[i] = { key: key, ascii: glyphes[alphabet][key] };
         }
         console.log("aTrouver",aTrouver);
-        
+
         return aTrouver;
     }
 }
@@ -427,8 +427,6 @@ var socket=io.connect();
 var clients = [];
 
 
-<<<<<<< HEAD
-=======
 document.getElementById("btnJoin").addEventListener("click", function() {
 	id = document.getElementById("nickname").value;
 	if (id == "") {
@@ -444,7 +442,6 @@ document.getElementById("btnJoin").addEventListener("click", function() {
 	document.getElementById("login").style.display = "none";
 	lobby_call();
 });
->>>>>>> 9f58f7dcd0d0cbd1db90cd38d4a3bade6689e320
 
 document.getElementById("btnCreate").addEventListener("click", function() {
 	id = document.getElementById("nickname").value;
@@ -478,9 +475,9 @@ function create_game_listener() {
 		var new_game = { owner : id, alphabet : undefined, delay : 0,  laps : 0, is_private : false };
 		/*
 			Init fields
-		*/	
-		console.log("game client-created");	
-		socket.emit("new_game", new_game);	
+		*/
+		console.log("game client-created");
+		socket.emit("new_game", new_game);
 	});
 }
 
@@ -501,13 +498,22 @@ function connect(player_id) {
 	});
 }
 
-function select_pane(pane) {
-	var panes = ["login","settings","lobby","content","choosingAlphabet"];
-	if (!panes.includes(pane)) { return; }
+function hide_pane(pane) {
+    document.getElementById(pane).style.display = "none";
+}
+
+function select_pane(pane, close_others=true) {
+	var panes = ["login","settings","lobby","choosingAlphabet"];
+	if (!panes.includes(pane)) { console.log("pane not found"); return; }
+    if (!close_others) {
+        document.getElementById(element).style.display = "block";
+        return;
+    }
 	panes.forEach(function(element) {
 		var modif;
   		if (element == pane) {
 			modif = "block";
+            console.log("selected pane : " + element);
 		}
 		else {
 			modif = "none";
@@ -529,13 +535,13 @@ function game_display(game) {
 	var game_cell = document.createElement("tr");
 	game_cell.setAttribute("id", html_id);
 	game_cell.innerHTML = "<p> Owner: " + game.owner + " | Alphabet: " + game.alphabet + " | Speed: " + game.delay + " | Duration: " + game.laps + " | Players: " + game.players.length + "/" + game.max_players + "</p>";
-	game_tab.appendChild(game_cell);	
+	game_tab.appendChild(game_cell);
 	game_cell.onclick = dynamic_game_click;
 	function dynamic_game_click() {
 		console.log("game clicked!");
 		socket.emit("game_connect", { player : id, game : game.id });
 	}
-	
+
 }
 
 function lobby_call() {
@@ -546,31 +552,35 @@ function lobby_call() {
 	});
 }
 
-socket.on("game_data", function(data){
-	if (data.player == id) {
-		// Définir affichage de jeu avec data.game
-	}	
+function is_included(game){
+    console.log("There are " + game.players.length + " players in the game");
+    var found = false;
+    game.players.forEach(function(p) {
+        if(p.id == id){
+            console.log("player found");
+            found = true;
+        }
+    });
+    return found;
+};
+
+socket.on("initClient",function(game){
+    if(!is_included(game)){
+        console.log("I'm not in the game :(");
+        return;
+    }
+    select_pane("choosingAlphabet");
+    if(id==game.painter){
+        console.log("I am the painter!");
+    }
+    else{
+        console.log("I am not the painter..");
+        hide_pane("toolbox");
+    }
 });
 
 document.getElementById("gameTest").addEventListener("click", function(){
-	socket.emit("beginTest");
-	socket.on("initClient",function(game){
-		if(!game.hasPerson(id)){
-			return;
-		}
-		if(id==game.painter){
-
-		}
-		else{
-
-		}
-	});
-
+	socket.emit("beginTest", id);
 });
 
 }
-
-
-
-
-
