@@ -18,6 +18,7 @@ function board(){
 
 
 
+
 	this.setBoard=function(){
 		document.getElementById("choosingAlphabet").style.display="block";
 		document.getElementById("dessin").style.display="block ";
@@ -303,6 +304,7 @@ function add_listener_chat(socket,real_pseudo){
 
 
 
+
 window.onload = function() {
 	var id;
 	var msg;
@@ -314,6 +316,7 @@ window.onload = function() {
 		id = document.getElementById("nickname").value;
 		if (id == "") {
 			return;
+
 		}
 		socket.emit("login", id);
 		socket.on("loginReturn",function(idFinal){
@@ -538,6 +541,7 @@ window.onload = function() {
 
 
 
+
 // setTimeout( function(){
 // }, 1 * 1000 );
 // console.log(choose.objGlyphes.getAllGlyphes("les2"));
@@ -547,10 +551,167 @@ window.onload = function() {
 
 
 
+
+var id;
+var msg;
+var socket=io.connect();
+var clients = [];
+
+
+document.getElementById("btnJoin").addEventListener("click", function() {
+	id = document.getElementById("nickname").value;
+	if (id == "") {
+		return;
+	}
+	socket.emit("login", id);
+	socket.on("loginReturn",function(idFinal){
+		id=idFinal;
+		document.getElementById("login").innerHTML = id;
+	});
+	document.getElementById("content").style.display = "block";
+	document.getElementById("login").innerHTML = id;
+	document.getElementById("login").style.display = "none";
+	lobby_call();
+});
+
+document.getElementById("btnCreate").addEventListener("click", function() {
+	id = document.getElementById("nickname").value;
+	if (id == "") {
+		return;
+	}
+	connect(id);
+	select_pane("settings");
+	create_game_listener();
+
+});
+
+function lobby_call() {
+	document.getElementById("lobby").style.display = "block";
+	socket.emit("get_lobby");
+	socket.on("lobby", function(games) {
+		var lobby_view = "<table>";
+		var l_size = games.length;
+		console.log(l_size);
+		for (var i = 0; i < l_size; i++) {
+			var game_view = "<p> Owner: " + games[i].owner + " | Alphabet: " + games[i].alphabet + " | Speed: " + games[i].max_delay + " | Duration: " + games[i].laps_number + "</p>";
+			lobby_view += "<tr>" + game_view + "</tr>";
+		}
+		lobby_view += "</table>";
+		document.getElementById("lobby").innerHTML = lobby_view;
+	});
 }
 
+function create_game_listener() {
+	document.getElementById("btnConfirmCreate").addEventListener("click", function() {
+		var new_game = { owner : id, alphabet : undefined, delay : 0,  laps : 0, is_private : false };
+		/*
+			Init fields
+		*/
+		console.log("game client-created");
+		socket.emit("new_game", new_game);
+	});
+}
 
+document.getElementById("btnJoin").addEventListener("click", function() {
+	id = document.getElementById("nickname").value;
+	if (id == "") {
+		return;
+	}
+	connect(id);
+	lobby_call();
+});
 
+function connect(player_id) {
+	socket.emit("login", player_id);
+	socket.on("loginReturn",function(real_id){
+		id = real_id;
+		console.log("You connected as " + id);
+	});
+}
 
+function hide_pane(pane) {
+    document.getElementById(pane).style.display = "none";
+}
 
+function select_pane(pane, close_others=true) {
+	var panes = ["login","settings","lobby","choosingAlphabet"];
+	if (!panes.includes(pane)) { console.log("pane not found"); return; }
+    if (!close_others) {
+        document.getElementById(element).style.display = "block";
+        return;
+    }
+	panes.forEach(function(element) {
+		var modif;
+  		if (element == pane) {
+			modif = "block";
+            console.log("selected pane : " + element);
+		}
+		else {
+			modif = "none";
+		}
+		document.getElementById(element).style.display = modif;
+	});
+}
 
+function lobby_display(games) {
+	var l_size = games.length;
+	for (var i = 0; i < l_size; i++) {
+		game_display(games[i]);
+	}
+}
+
+function game_display(game) {
+	var html_id = "game_" + game.id;
+	var game_tab = document.getElementById("lobby");
+	var game_cell = document.createElement("tr");
+	game_cell.setAttribute("id", html_id);
+	game_cell.innerHTML = "<p> Owner: " + game.owner + " | Alphabet: " + game.alphabet + " | Speed: " + game.delay + " | Duration: " + game.laps + " | Players: " + game.players.length + "/" + game.max_players + "</p>";
+	game_tab.appendChild(game_cell);
+	game_cell.onclick = dynamic_game_click;
+	function dynamic_game_click() {
+		console.log("game clicked!");
+		socket.emit("game_connect", { player : id, game : game.id });
+	}
+
+}
+
+function lobby_call() {
+	select_pane("lobby");
+	socket.emit("get_lobby");
+	socket.on("lobby", function(games) {
+		lobby_display(games);
+	});
+}
+
+function is_included(game){
+    console.log("There are " + game.players.length + " players in the game");
+    var found = false;
+    game.players.forEach(function(p) {
+        if(p.id == id){
+            console.log("player found");
+            found = true;
+        }
+    });
+    return found;
+};
+
+socket.on("initClient",function(game){
+    if(!is_included(game)){
+        console.log("I'm not in the game :(");
+        return;
+    }
+    select_pane("choosingAlphabet");
+    if(id==game.painter){
+        console.log("I am the painter!");
+    }
+    else{
+        console.log("I am not the painter..");
+        hide_pane("toolbox");
+    }
+});
+
+document.getElementById("gameTest").addEventListener("click", function(){
+	socket.emit("beginTest", id);
+});
+
+}
