@@ -11,7 +11,7 @@
 
 <body>
 
-<div id="login" style="display: block;">
+<div id="login" style="display: none;">
 <p>Choose your nickname : <br>
             <input type="text" id="nickname" placeholder="Enter your nickname" size="30">
             <input type="button" value="Join a Party" id="btnJoin"> <br>
@@ -25,21 +25,29 @@
 
 
 <div id="choosingAlphabet" style="display: none;">
-  <div id="content">     
-    <canvas id="dessin" width="500" height="500"></canvas>
-    <canvas id="overlay" width="500" height="500"></canvas>
-    <div id="toolbox">
-        <input type="radio" name="radCommande" id="tracer" checked> <label for="tracer"></label>
-        <input type="radio" name="radCommande" id="gommer"> <label for="gommer"></label>
-        <input type="radio" name="radCommande" id="ligne">  <label for="ligne"></label>
-        <input type="range" id="size" min="1" max="50" value="5">
-        <div id="new"></div>
-    </div>
-    <div id="modal">
+  <div id="content" >     
+    <canvas id="dessin" width="500" height="500" style="display: none"></canvas>
+    <canvas id="overlay" width="500" height="500" style="display: none"></canvas>
+    <div id="box">
     </div>
   </div>
   <div id="choix">
   </div>
+
+</div>
+
+
+<div id="chat">
+    <h3>Clients connectés</h3>
+    <aside>
+    </aside>
+    <main>
+    </main>
+    <footer>
+        <input type="text" id="monMessage">
+        <input type="button" value="Envoyer" id="btnEnvoyer">
+        <input type="button" value="Quitter" id="btnQuitter">
+    </footer>
 </div>
 
 
@@ -111,7 +119,7 @@ Laps number :
 <div id="game" style="display: none;">
 </div>
 
-<button id="gameTest" style="display: block">
+<button id="begin" style="display: block;">
   Test
 </button>
 

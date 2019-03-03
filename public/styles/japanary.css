@@ -3,6 +3,108 @@
     padding: 0;
 }
 
+body > div {
+    box-shadow: -10px 10px 20px #A0A0A0;
+    border: solid 1px #A0A0A0;
+}
+
+#chat {
+    position: absolute;
+    top: 263px;
+    left: 1000px;
+    transform: translateX(-50%) translateY(-50%);
+    -webkit-transform: translateX(-50%) translateY(-50%);
+    -ms-transform: translateX(-50%) translateY(-50%);
+    height: 480px;
+    width: 500px;
+    background-color: beige;
+    padding: 10px;
+    display: none;
+}
+#chat h2, #chat h3 {
+    position: absolute;
+    background-color: inherit;
+    height: 22px;
+    padding: 5px;
+    line-height: 16px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 5px 5px 0 0;
+    border-top: inherit;
+    border-left: inherit;
+    border-right: inherit;
+}
+#chat h2 {
+    top: -35px;
+    left: -1px;
+}
+#chat h3 {
+    right: -11px;
+    top: -28px;
+    transform-origin: left center;
+    transform: translateX(100%) rotate(90deg);
+}
+#chat main {
+    position: relative;
+    height: calc(100% - 30px);
+    width: calc(100% - 170px);
+    background-color: white;
+    overflow-y: scroll;
+    line-height: 1.2;
+}
+#chat main p {
+    line-height: 1;
+    font-size: 16px;
+    margin: 3px;
+}
+#chat main .mp {
+    color: darkblue;   
+}
+#chat main .moi {
+    color: green;   
+}
+#chat main .system {
+    color: red;   
+}
+#chat main img {
+    max-width: 50%;
+    vertical-align: text-top;
+}   
+
+/** Pied de zone de chat */        
+#chat footer {
+    position: absolute; 
+    bottom: 0;
+    padding: 0px; 
+    width: calc(100% - 20px);
+    height: 30px;
+    background-color: inherit;
+}
+#chat footer input {
+    height: 22px;
+    font-size: 15px;
+}
+#chat > footer input:first-child {
+    width: calc(100% - 150px);
+    font-size: 12px;
+}
+#chat > footer input:last-child {
+    float: right;
+}
+        
+#chat aside {
+    width: 160px;
+    float: right;
+    margin: 0px;
+    padding: 5px;
+    height: calc(100% - 30px);
+    background-color: white;
+    line-height: 1;
+    font-size: 14px;
+}
+
+
+
 #choosingAlphabet{
     position:absolute;
     left:0;
@@ -19,6 +121,7 @@
 }
 
 
+
 #choix {
     margin-top: 8vh;
     display: flex;
@@ -26,6 +129,14 @@
     justify-content: space-evenly;
     align-items: center;
     align-content: flex-start;
+}
+
+
+#choix table{
+	position:absolute;
+	margin: 600px auto;
+	align-items: center;
+	top: 0;
 }
 
 #choix button{
@@ -39,10 +150,10 @@
 }
 
 #content {
-    position: relative;
+    position: absolute;
     width: 620px;
     height: 500px;
-    margin: 10px auto;
+    margin: 10px 200px;
 }
     
 #content canvas {
@@ -71,6 +182,7 @@
     top: 0;
     display: flex;
     flex-direction: column;
+    /*display: none;*/
 }
 #toolbox > * {
     position: relative;
@@ -100,80 +212,14 @@
 #toolbox label[for=ligne] {
     background-image: url(../images/icone-trait.png);   
 }
-#toolbox label[for=rectangle] {
-    background-image: url(../images/icone-rectangle.png);   
-}
+
 #toolbox input:checked + label[for] {
     box-shadow: blue 0 0 5px;
 }  
 #toolbox #new {
     background-image: url(../images/icone-nouveau.png);   
 }
-#toolbox #open {
-    background-image: url(../images/icone-ouvrir.png);   
-}
-#toolbox #save {
-    background-image: url(../images/icone-enregistrer.png);   
-}
+
      
         
-/** Style de la fenêtre modale contenant la liste des images */        
-#modal {    
-    font-family: sans-serif;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    overflow: scroll;
-    transform: translateX(-60%) translateY(-50%);
-    background-color: lightgray;
-    border-radius: 10px;
-    border: solid 3px #000;
-    width: 50%;
-    height: 70%;
-    display: none;
-}
-
-#modal table {
-    margin: 10px auto;   
-}
-#modal tr {
-    border: solid 1px #000;
-    margin: 10px;
-}
-#modal td > img {
-    width: 24px;
-    height: 24px;
-}
-#modal td > img[src^=data] {
-    width: 80px;
-    height: 80px;
-    border: solid 1px #000;
-    margin-left: 10px;
-}
-        
-#modal #fermer {
-    position: absolute; 
-    right: 0px;
-    top: 0px;
-    border-radius: 50%;
-    width: 30px;
-    height: 30px;    
-}
-#modal #fermer::before, #modal #fermer::after {
-    content: '';
-    position: absolute;
-    width: 70%;
-    height: 20%;
-    top: 50%;
-    left: 50%;
-    background-color: black;
-}
-#modal #fermer::before {
-    transform: translateX(-50%) translateY(-50%) rotate(45deg) ;    
-}
-#modal #fermer::after {
-    transform: translateX(-50%) translateY(-50%) rotate(-45deg) ;    
-}
-#modal h3 {
-    padding-left: 10%;
-}   
+ 
