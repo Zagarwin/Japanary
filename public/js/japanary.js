@@ -367,7 +367,7 @@ window.onload = function() {
 	} 
 
 	document.getElementById("begin").addEventListener("click", function(){
-		var amIpainter = true;
+		var amIpainter = false;
 		if(amIpainter){
 			var board1 = new board();
 			board1.afficherToolbox();
@@ -456,7 +456,12 @@ window.onload = function() {
 			        var data = await response.json();
 			        this.objGlyphes = new Glyphes(data);
 			    }
-			    var alphabet = document.querySelector('#options input[name=radGlyphe]:checked').value;
+			    if(document.querySelector('#options input[name=radGlyphe]:checked')!=null){
+				    var alphabet = document.querySelector('#options input[name=radGlyphe]:checked').value;
+			    }
+			   	else{
+			   		var alphabet = "hiragana";
+			   	}
 			    this.glyphes = this.objGlyphes.getAllGlyphes(alphabet);
 			    this.setResult(res);
 			    console.log("res:",this.result);
@@ -708,10 +713,6 @@ socket.on("initClient",function(game){
         console.log("I am not the painter..");
         hide_pane("toolbox");
     }
-});
-
-document.getElementById("gameTest").addEventListener("click", function(){
-	socket.emit("beginTest", id);
 });
 
 }
