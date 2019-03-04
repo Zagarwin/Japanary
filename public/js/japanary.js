@@ -8,6 +8,13 @@
 // 	}
 // };
 var myPoint=0;
+var id;
+var game_id = null;
+var msg;
+var socket;
+var clients = [];
+var rules=[];
+var amIpainter = false;
 
 function board(){
 	this.afficherToolbox=function(){
@@ -216,89 +223,97 @@ function board(){
 function add_listener_chat(socket,real_pseudo){
 	//chat
 
-	socket.on("liste", function(list) {
-		var listeClient = document.getElementsByTagName("aside")[0];
-		var html = "<table>";
-		for(var i in list){
-			html += "<tr><td>"+list[i]+"</td></tr>";
-		}
-		html += "</table>" ;
-		listeClient.innerHTML = html ;
-	});
-	socket.on("message", function(message){
-		var main = document.getElementsByTagName("main")[0];
-		var time = new Date(message["date"]);
-		time = time.getHours()+":"+time.getMinutes()+":"+time.getSeconds()+" ";
-		var color;
-		var sender;
-		var embracer;
-		var found=(message["text"].match(/\[img:.*\]/));
-		if(found!=null){
-			var color_num = message["from"].charCodeAt(0)%8;
-			color_0 = colors[color_num];
-			color = 'color:'+color_0;
-			sender = " - "+message["from"]+" : ";
-			var url_0 = found[0].substring(5, found[0].length-1);
-			console.log(url_0);
-			message["text"]="<img src=\'"+url_0+"\'/>";
-			embracer = "";
-		}
-		else if((message["from"]==null) && (message["to"]==null)){
-			color = 'color:red';
-			sender = "- [admin] : ";
-			embracer = "";
-		}
-		else if((message["to"]==null)){ 
-			var color_num = message["from"].charCodeAt(0)%8;
-			color_0 = colors[color_num];
-			color = 'color:'+color_0;
-			sender = " - "+message["from"]+" : ";
-			embracer = "";
-		}
-		else{
-			var color_num = message["from"].charCodeAt(0)%8;
-			color_0 = colors[color_num];
-			color = 'color:'+color_0;
-			sender = message["from"]+" :";
-			embracer = "(à "+message["to"]+") : ";
-		}
-		if((message["from"]==real_pseudo)||(message["to"]==real_pseudo)||(message["to"]==null)){
-			main.innerHTML += "<p style="+color+">"+time+sender+embracer+message["text"]+"</p>";
-		}
-	});
-	var envoyer = document.getElementById("btnEnvoyer");
-	envoyer.addEventListener("click", function(e){
-		var monMessage = document.getElementById("monMessage").value;
-		if(monMessage.length>0){
-			// var regStr1 = monMessage.match(/^@\s/);
-			// for(var i in regStr1){
-			// 	console.log(regStr1[i]);
-			// }
-			var to_0 = null;
-			var message_text = monMessage;
-			var str1 = monMessage.split(' ');
-			if(str1[0].charAt(0) == "@"){
-				to_0 = str1[0].slice(1);
-				message_text = monMessage.slice(str1[0].length);
-			}
-			
-			var mes={
-				from:  real_pseudo,
-				to : to_0,
-				text : message_text,
-				date : Date.now()
-			};
-		socket.emit("message", mes);
-			document.getElementById("monMessage").value="";
-		}
-	});
-	var exit = document.getElementById("btnQuitter");
-	exit.addEventListener("click", function(e){
-		location.reload();
-		// socket.emit("disconnect", "bye");
-		// logScreen.style.display = "block";
-		// content.style.display = "none";
-	});
+	socket.on("bienvenue", function(id) {    
+        if (id) {
+            document.querySelector("#content main").innerHTML = "";
+            document.getElementById("monMessage").value = "";
+            document.getElementById("login").innerHTML = id;
+            document.getElementById("radio2").checked = true;
+        }
+    });
+    socket.on("message", function(msg) {
+        if (id) {
+            afficherMessage(msg);
+        }
+    });
+    socket.on("liste", function(liste) {
+        if (id) {
+            afficherListe(liste);
+        }
+    });
+
+
+    /** 
+     *  Connexion de l'utilisateur au chat.
+     */
+    function connect() {
+        console.log(sock);
+
+        // recupération du pseudo
+        var user = document.getElementById("pseudo").value.trim();
+        if (! user) return;
+        document.getElementById("radio2").check = true;
+        id = user; 
+        sock.emit("login", user);
+    }
+
+
+    /** 
+     *  Affichage des messages 
+     */
+    function afficherMessage(data) {
+        if (!id) {
+            return;   
+        }
+        bcMessages.innerHTML += "<p class='" + classe + "'>" + date + " - " + data.text + "</p>"; 
+        document.querySelector("main > p:last-child").scrollIntoView();
+    };
+    
+
+
+    function afficherListe(newList) {
+        document.querySelector("#content aside").innerHTML = newList.join("<br>");
+    }
+
+
+    /**
+     *  Envoyer un message
+     */ 
+    function envoyer() {
+        
+        var msg = document.getElementById("monMessage").value.trim();
+        if (!msg) return;   
+
+        // message privé
+        var to = null;
+        if (msg.startsWith("@")) {
+            var i = msg.indexOf(" ");
+            to = msg.substring(1, i);
+            msg = msg.substring(i);
+        }
+        // envoi
+        socket.emit("message", { from: id, to: to, text: msg });
+
+        document.getElementById("monMessage").value = "";
+    }
+
+
+    /**
+     *  Quitter le chat et revenir à la page d'accueil.
+     */
+    function quitter() { 
+        id = null;
+        sock.emit("logout");
+        document.getElementById("radio1").checked = true;
+    };
+
+    document.getElementById("btnQuitter").addEventListener("click", quitter);
+    document.getElementById("btnEnvoyer").addEventListener("click", envoyer);
+    document.getElementById("monMessage").addEventListener("keydown", function(e) {
+        if (e.keyCode == 13) { 
+            envoyer();
+        }
+    });
 }
 
 
@@ -306,10 +321,94 @@ function add_listener_chat(socket,real_pseudo){
 
 
 window.onload = function() {
-	var id;
-	var msg;
-	var socket=io.connect();
-	var clients = [];
+	socket=io.connect();
+	clients = [];
+
+		//Object for choose 
+	var choose = {
+		chance : 3,
+		objGlyphes : null,
+		alphabet : null,
+		glyphes : null,
+		result : null,
+		size : null,
+
+
+		displayAllGlyphes: function(glyphes){
+			var chance = 3;
+			this.size = glyphes.length;
+			var doc = document.getElementById("choix");
+			var docHtml = "<table><tr>";
+			for(var i=0; i<this.size; i++){
+				document.getElementById("choosingAlphabet").style.display="block";
+				if(i%16==0 && i>0){
+					docHtml += "</tr><tr>";
+				}
+				docHtml += "<td><button id=choixx"+glyphes[i]['ascii']+">"+glyphes[i]["key"]+" </button></td>"; 
+			}
+			docHtml += "</tr></table>";
+			doc.innerHTML += docHtml;
+			for(var j=0; j<this.size; j++){
+				document.getElementById("choixx"+this.glyphes[j]["ascii"]).addEventListener("click",(function(result){
+					return function(){
+						if(this.id == "choixx"+result){
+							alert("NICE WP");
+						}
+						else{
+							console.log("LOST");
+						}
+						if(chance>=0){
+							console.log("I SEND MESSA");
+							socket.emit("message", {"player_id":id, "game_id":game_id, "answer":this.id });
+						}
+						
+					}
+				})(chance));
+			}
+		},
+
+		getResult: function(old){
+			var size = this.glyphes.length;
+			var res = "";
+			do{
+				res = this.glyphes[size*Math.random()|0]["ascii"];
+			}
+			while(res == old);
+			return res;
+		},
+
+		setResult: function(res){
+			this.result=res;
+		},
+
+		// updateResult: function(){
+		// 	document.getElementById("choixx"+result).className="correct";
+		// }
+		
+
+
+		initGlyphes: async function(res,isPainter){
+			if (typeof fetch !== undefined) {       
+			    // avec des promesses et l'instruction fetch
+			    var response = await fetch("./json/alphabet.json"); 
+			    if (response.status == 200) {
+			        var data = await response.json();
+			        this.objGlyphes = new Glyphes(data);
+			    }
+				var alphabet = rules[0];
+			    this.glyphes = this.objGlyphes.getAllGlyphes(alphabet);
+			    this.setResult(res);
+			    console.log("res:",this.result);
+			    console.log("gly:",this.glyphes);
+			    if(!isPainter){
+			    	this.displayAllGlyphes(this.glyphes);
+			    }
+			}
+			else{
+				console.log("Your navigateur can not accpet fetch");
+			}
+		}
+	}
 
 
 	document.getElementById("btnJoin").addEventListener("click", function() {
@@ -366,116 +465,67 @@ window.onload = function() {
 		});
 	} 
 
+	socket.on("new_gameReturn", function(data){
+		game_id = data.game_id;
+	});
+
 	document.getElementById("begin").addEventListener("click", function(){
-		var amIpainter = false;
+		socket.emit("game_start", game_id);
+	});
+
+
+	socket.on("game_init", function(data){
+		if(game_id == data.game_id){
+			rules = data.rules;
+		}
+	});
+
+	socket.on("tour1", function(data){
+		if((game_id == data.game_id)&&(id == data.player_id)){
+			amIpainter = true;
+			document.getElementById("bc1In3").style.display = "block";
+			var res=[];
+			var r0,r1,r2;
+			do{
+				r0 = choose.size*Math.random();
+				r1 = choose.size*Math.random();
+				r2 = choose.size*Math.randon();
+			}while(r0 == r1 || r1 == r2 || r0 == r2);
+			var temp = "<tr><td><bouton id=choose"+choose.glyphes[r0]['ascii']+">"+choose.glyphes[r0]["key"]+"</td>";
+			temp += "<td><bouton id=choose"+choose.glyphes[r1]['ascii']+">"+choose.glyphes[r1]["key"]+"</td>";
+			temp += "<td><bouton id=choose"+choose.glyphes[r2]['ascii']+">"+choose.glyphes[r2]["key"]+"</td></tr>";
+			document.getElementById("table1In3").innerHTML=temp;
+			document.getElementById("choose"+choose.glyphes[r0]['ascii']).addEventListener("click",function(){
+				socket.emit("tour2",{"game_id":game_id, "result": choixx+glyphes[r0]['ascii']});
+			});
+			document.getElementById("choose"+choose.glyphes[r1]['ascii']).addEventListener("click",function(){
+				socket.emit("tour2",{"game_id":game_id, "result": choixx+glyphes[r1]['ascii']});
+			});
+			document.getElementById("choose"+choose.glyphes[r2]['ascii']).addEventListener("click",function(){
+				socket.emit("tour2",{"game_id":game_id, "result": choixx+glyphes[r2]['ascii']});
+			});
+			document.getElementById("bc1In3").style.display = "none";
+		}
+	});
+
+	socket.on("tour3",function(data){
 		if(amIpainter){
 			var board1 = new board();
 			board1.afficherToolbox();
 			board1.setBoard();
 			board1.makeBoardWork();
-			choose.initGlyphes(12354,amIpainter);
+			choose.initGlyphes(data.result,amIpainter);
 			console.log(choose.getResult());
 		}
 		else{
 			var board2 = new board();
 			board2.setBoard();
-			choose.initGlyphes(12354,amIpainter);
+			choose.initGlyphes(data.result,amIpainter);
 			document.getElementById("chat").style.display="block";
 			add_listener_chat(socket,id);
 		}
-		socket.emit("begin",{owner:id, glyphes:choose.glyphes, result:choose.result })
+		// socket.emit("begin",{owner:id, glyphes:choose.glyphes, result:choose.result })
 	});
-
-
-
-
-	// Yufei's Part
-
-	//Object for choose 
-	var choose = {
-		chance : 3,
-		objGlyphes : null,
-		// var tab : null,
-		alphabet : null,
-		glyphes : null,
-		result : null,
-
-
-		displayAllGlyphes: function(glyphes){
-			var size = glyphes.length;
-			var doc = document.getElementById("choix");
-			var docHtml = "<table><tr>";
-			for(var i=0; i<size; i++){
-				document.getElementById("choosingAlphabet").style.display="block";
-				if(i%16==0 && i>0){
-					docHtml += "</tr><tr>";
-				}
-				docHtml += "<td><button id=choixx"+glyphes[i]['ascii']+">"+glyphes[i]["key"]+" </button></td>"; 
-			}
-			docHtml += "</tr></table>";
-			doc.innerHTML += docHtml;
-			for(var j=0; j<size; j++){
-				document.getElementById("choixx"+this.glyphes[j]["ascii"]).addEventListener("click",(function(result){
-					return function(){
-						if(this.id == "choixx"+result){
-							alert("NICE WP");
-						}
-						else{
-							console.log("LOST");
-						}
-					}
-				})(this.result));
-			}
-		},
-
-		getResult: function(old){
-			var size = this.glyphes.length;
-			var res = "";
-			do{
-				res = this.glyphes[size*Math.random()|0]["ascii"];
-			}
-			while(res == old);
-			return res;
-		},
-
-		setResult: function(res){
-			this.result=res;
-		},
-
-		// updateResult: function(){
-		// 	document.getElementById("choixx"+result).className="correct";
-		// }
-		
-
-
-		initGlyphes: async function(res,isPainter){
-			if (typeof fetch !== undefined) {       
-			    // avec des promesses et l'instruction fetch
-			    var response = await fetch("./json/alphabet.json"); 
-			    if (response.status == 200) {
-			        var data = await response.json();
-			        this.objGlyphes = new Glyphes(data);
-			    }
-			    if(document.querySelector('#options input[name=radGlyphe]:checked')!=null){
-				    var alphabet = document.querySelector('#options input[name=radGlyphe]:checked').value;
-			    }
-			   	else{
-			   		var alphabet = "hiragana";
-			   	}
-			    this.glyphes = this.objGlyphes.getAllGlyphes(alphabet);
-			    this.setResult(res);
-			    console.log("res:",this.result);
-			    console.log("gly:",this.glyphes);
-			    if(!isPainter){
-			    	this.displayAllGlyphes(this.glyphes);
-			    }
-			}
-			else{
-				console.log("Your navigateur can not accpet fetch");
-			}
-		}
-	}
-
 
 
 
@@ -491,14 +541,14 @@ window.onload = function() {
 	     *  (fonction privée -- interne à la classe)
 	     */
 	    var getGlyphKeys = function(alphabet) {
-	        var cbs = document.querySelectorAll("#options input[type=checkbox]:checked");
+	        var cbs = rules;
 	        return Object.keys(glyphes[alphabet]).filter(function(elem, _index, _array) {
 	            // closure qui s'appuie sur les checkbox qui ont été sélectionnées (cbs)
 	            var len = cbs.length;
 	            if(cbs.length>0){
-		            for (var i=0; i < cbs.length; i++) {
+		            for (var i=1; i < cbs.length; i++) {
 		                // on vérifie si la clé (elem) matche la regex définie comme valeur de la checkbox
-		                var patt = new RegExp("\\b" + cbs[i].value + "\\b", "g");
+		                var patt = new RegExp("\\b" + cbs[i] + "\\b", "g");
 		                if (patt.test(elem)) {
 		                    return true;   
 		                }
@@ -519,10 +569,6 @@ window.onload = function() {
 	     *  @param alphabet     String  alphabet considéré
 	     */
 	    this.getAllGlyphes = function(alphabet) {
-	    	if (alphabet == "les2") {
-	            alphabet = (Math.random() < 0.5) ? 'hiragana' : 'katakana';
-	            console.log(alphabet);   
-	        }
 	        var eligible = getGlyphKeys(alphabet);
 	        var aTrouver = [];
 	        var key;
@@ -608,7 +654,7 @@ function lobby_call() {
 
 function create_game_listener() {
 	document.getElementById("btnConfirmCreate").addEventListener("click", function() {
-		var new_game = { owner : id, alphabet : undefined, delay : 0,  laps : 0, is_private : false };
+		var new_game = { "owner" : id, "alphabet" : undefined, "delay" : 0,  "laps" : 0, "is_private" : false };
 		/*
 			Init fields
 		*/

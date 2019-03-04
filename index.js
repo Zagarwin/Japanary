@@ -35,21 +35,15 @@ io.on('connection', function (socket) {
      *  Réception d'un message et transmission à tous.
      *  @param  msg     Object  le message à transférer à tous  
      */
-    socket.on("message", function(msg) {
-        console.log("Reçu message");   
+    socket.on("message", function(data) {
+        console.log("Reçu message:"+data.answer);   
         // si jamais la date n'existe pas, on la rajoute
-        msg.date = Date.now();
-        // si message privé, envoi seulement au destinataire
-        if (msg.to != null && clients[msg.to] !== undefined) {
-            console.log(" --> message privé");
-            clients[msg.to].emit("message", msg);
-            if (msg.from != msg.to) {
-                socket.emit("message", msg);
-            }
+        date = Date.now();
+        if(data.answer == games[data.game_id].result){
+            socket.emit("message",{"text":data.player_id+" has known the word!!! Quickly!"});
         }
-        else {
-            console.log(" --> broadcast");
-            io.sockets.emit("message", msg);
+        else{
+            socket.emit("message",{"text":data.player_id+" guess "+data.answer});
         }
     });
 
@@ -116,7 +110,8 @@ io.on('connection', function (socket) {
     });
 
     socket.on("new_game", function(data) {
-	game_id = init_game(data);
+	   game_id = init_game(data);
+       socket.emit("new_gameReturn", {"game_id":game_id});
     });
 
     socket.on("beginTest", function(player_id){
@@ -132,7 +127,7 @@ io.on('connection', function (socket) {
    });
 
    socket.on("command",function(command){
-        command["gameID"]
+        command["gameID"];//wtf???
         socket.emit("command2clients",command);
    });
 
@@ -141,6 +136,22 @@ io.on('connection', function (socket) {
 	games[whowhere.game].connectPlayer(clients[whowhere.player]);
     socket.emit("initClient", games[whowhere.game]);
    });
+
+
+   socket.on("game_start", function(game_id){
+    socket.emit("game_init", {"game_id":game_id ,"rule":games[game_id].rule});
+    if((games[game_id].players.size>1)&&(games[game_id].laps>0)){
+        games[game_id].start();
+        socket.emit("tour1", games[game_id]);
+    }
+   });
+
+   socket.on("tour2",function(data){
+    games[data.game_id].result=data.result;
+    socket.emit("tour3",games[data.id]);
+   });
+
+
 
 });
 
@@ -153,7 +164,7 @@ var max_id = 0;
 
 
 function init_game(data) {
-	var new_game = new Game();
+    new_game = new Game();
 	new_game.owner = data.owner;
 	new_game.delay = data.delay;
 	new_game.laps = data.laps;
@@ -165,7 +176,6 @@ function init_game(data) {
 }
 
 function Game(){
-
     this.owner = null;
     this.players=[];
     this.max_players = 5;
@@ -175,6 +185,9 @@ function Game(){
     this.delay = 0;
     this.laps = 0;
     this.alphabet = null;
+    this.started = false;
+    this.rule = ["hirakana"];
+    this.result = null;
 
     this.addPerson=function(p){   // à enlever
         this.players.push(p);
@@ -190,11 +203,12 @@ function Game(){
     }
 
     this.start=function(){
-        this.painter=this.persons[this.numberContinue%this.persons.size];
-        this.numberContinue++;
+        choosePainter();
+        this.started=true;
     }
     this.choosePainter=function(){
         this.painter=this.players[this.numberContinue%this.players.length];
+        this.numberContinue++;
     };
 
     this.connectPlayer=function(player){
