@@ -410,39 +410,6 @@ window.onload = function() {
 	}
 
 
-	document.getElementById("btnJoin").addEventListener("click", function() {
-		id = document.getElementById("nickname").value;
-		if (id == "") {
-			return;
-
-		}
-		socket.emit("login", id);
-		socket.on("loginReturn",function(idFinal){
-			id=idFinal;
-			//document.getElementById("login").innerHTML = id;
-		});
-		document.getElementById("content").style.display = "block";
-		//document.getElementById("login").innerHTML = id;
-		document.getElementById("login").style.display = "none";
-		lobby_call();
-	});
-
-	function lobby_call() {
-		document.getElementById("lobby").style.display = "block";
-		socket.emit("get_lobby");
-		socket.on("lobby", function(games) {
-			var lobby_view = "<table>";
-			var l_size = games.length;
-			console.log(l_size);
-			for (var i = 0; i < l_size; i++) {
-				var game_view = "<p> Owner: " + games[i].owner + " | Alphabet: " + games[i].alphabet + " | Speed: " + games[i].max_delay + " | Duration: " + games[i].laps_number + "</p>";
-				lobby_view += "<tr>" + game_view + "</tr>";
-			}
-			lobby_view += "</table>";
-			document.getElementById("lobby").innerHTML = lobby_view;
-		});
-	}
-
 	function create_game_listener() {
 		document.getElementById("btnConfirmCreate").addEventListener("click", function() {
 			var new_game = { owner : id, alphabet : undefined, max_delay : 0,  laps_number : 0, is_private : false };
@@ -596,23 +563,6 @@ var id;
 var msg;
 var clients = [];
 
-
-document.getElementById("btnJoin").addEventListener("click", function() {
-	id = document.getElementById("nickname").value;
-	if (id == "") {
-		return;
-	}
-	socket.emit("login", id);
-	socket.on("loginReturn",function(idFinal){
-		id=idFinal;
-		//document.getElementById("login").innerHTML = id;
-	});
-	document.getElementById("content").style.display = "block";
-	//document.getElementById("login").innerHTML = id;
-	document.getElementById("login").style.display = "none";
-	lobby_call();
-});
-
 document.getElementById("btnCreate").addEventListener("click", function() {
 	id = document.getElementById("nickname").value;
 	if (id == "") {
@@ -624,23 +574,6 @@ document.getElementById("btnCreate").addEventListener("click", function() {
 
 });
 
-function lobby_call() {
-	document.getElementById("lobby").style.display = "block";
-	socket.emit("get_lobby");
-	socket.on("lobby", function(games) {
-		var lobby_view = "<table>";
-		var l_size = games.length;
-		console.log(l_size);
-		for (var i = 0; i < l_size; i++) {
-			var game_view = "<p> Owner: " + games[i].owner + " | Alphabet: " + games[i].alphabet + " | Speed: " + games[i].max_delay + " | Duration: " + games[i].laps_number + "</p>";
-			lobby_view += "<tr>" + game_view + "</tr>";
-		}
-		lobby_view += "</table>";
-		document.getElementById("lobby").innerHTML = lobby_view;
-	});
-}
-
-
 
 document.getElementById("btnJoin").addEventListener("click", function() {
 	id = document.getElementById("nickname").value;
@@ -648,6 +581,7 @@ document.getElementById("btnJoin").addEventListener("click", function() {
 		return;
 	}
 	connect(id);
+	console.log("> 1");
 	lobby_call();
 });
 
@@ -684,10 +618,12 @@ function select_pane(pane, close_others=true) {
 }
 
 function lobby_display(games) {
+	console.log("> 4");
 	var l_size = games.length;
 	for (var i = 0; i < l_size; i++) {
 		game_display(games[i]);
 	}
+	console.log("> 5");
 }
 
 function game_display(game) {
@@ -706,9 +642,12 @@ function game_display(game) {
 }
 
 function lobby_call() {
+	console.log("> 2");
 	select_pane("lobby");
 	socket.emit("get_lobby");
+	console.log("> 2.5");
 	socket.on("lobby", function(games) {
+		console.log("> 3");
 		lobby_display(games);
 	});
 }
