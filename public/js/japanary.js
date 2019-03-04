@@ -427,17 +427,6 @@ window.onload = function() {
 		lobby_call();
 	});
 
-	document.getElementById("btnCreate").addEventListener("click", function() {
-		id = document.getElementById("nickname").value;
-		if (id == "") {
-			return;
-		}
-		document.getElementById("settings").style.display = "block";
-		document.getElementById("login").style.display = "none";
-		create_game_listener();
-
-	});
-
 	function lobby_call() {
 		document.getElementById("lobby").style.display = "block";
 		socket.emit("get_lobby");
