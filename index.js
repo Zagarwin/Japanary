@@ -126,7 +126,11 @@ io.on('connection', function (socket) {
 
    socket.on("get_lobby", function() {
 	console.log("games sended : " + games.length);
-	socket.emit("lobby", games);
+    var games_display = [];
+    games.forEach(function(game) {
+        games_display.push({ owner:game.owner, alphabet:game.alphabet, delay:game.delay, laps:game.laps, players:game.players.length, max_players:game.max_players, id:game.id});
+    });
+	socket.emit("lobby", games_display);
    });
 
    socket.on("command",function(command){

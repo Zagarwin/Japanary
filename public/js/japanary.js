@@ -631,7 +631,7 @@ function game_display(game) {
 	var game_tab = document.getElementById("lobby");
 	var game_cell = document.createElement("tr");
 	game_cell.setAttribute("id", html_id);
-	game_cell.innerHTML = "<p> Owner: " + game.owner + " | Alphabet: " + game.alphabet + " | Speed: " + game.delay + " | Duration: " + game.laps + " | Players: " + game.players.length + "/" + game.max_players + "</p>";
+	game_cell.innerHTML = "<p> Owner: " + game.owner + " | Alphabet: " + game.alphabet + " | Speed: " + game.delay + " | Duration: " + game.laps + " | Players: " + game.players + "/" + game.max_players + "</p>";
 	game_tab.appendChild(game_cell);
 	game_cell.onclick = dynamic_game_click;
 	function dynamic_game_click() {
