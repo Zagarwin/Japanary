@@ -15,6 +15,7 @@ app.get('/', function(req, res) {
     res.sendFile(__dirname + '/public/display.html');
 });
 
+io.set('origins', '*:*');
 
 
 /*** Gestion des clients et des connexions ***/
@@ -29,6 +30,29 @@ io.on('connection', function (socket) {
     // message de debug
     console.log("Un client s'est connecté");
     var currentID = null;
+
+    /**
+     *  Doit être la première action après la connexion.
+     *  @param  id  string  l'identifiant saisi par le client
+     */
+    socket.on("login", function(id) {
+        while (clients[id]) {
+            id = id + "_";
+        }
+        currentID = id;
+        currentPerson = new Person(currentID);
+        console.log("add client "+currentID);
+        clients[currentID] = socket;
+
+        socket.emit("loginReturn",currentID);
+
+
+        console.log("Nouvel utilisateur : " + currentID);
+        // envoi aux autres clients
+        // socket.broadcast.emit("message", { from: null, to: null, text: currentID + " a rejoint la discussion", date: Date.now() } );
+        // envoi de la nouvelle liste à tous les clients connectés
+    });
+
 
 
     /**
@@ -85,29 +109,7 @@ io.on('connection', function (socket) {
     });
 
 
-    
-    /**
-     *  Doit être la première action après la connexion.
-     *  @param  id  string  l'identifiant saisi par le client
-     */
-    socket.on("login", function(id) {
-        while (clients[id]) {
-            id = id + "_";
 
-        }
-        currentID = id;
-        currentPerson = new Person(currentID);
-        console.log("add client "+currentID);
-        clients[currentID] = currentPerson;
-
-        socket.emit("loginReturn",currentID);
-
-
-        console.log("Nouvel utilisateur : " + currentID);
-        // envoi aux autres clients
-        // socket.broadcast.emit("message", { from: null, to: null, text: currentID + " a rejoint la discussion", date: Date.now() } );
-        // envoi de la nouvelle liste à tous les clients connectés
-    });
 
     socket.on("new_game", function(data) {
 	   game_id = init_game(data);

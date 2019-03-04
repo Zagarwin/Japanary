@@ -11,7 +11,7 @@ var myPoint=0;
 var id;
 var game_id = null;
 var msg;
-var socket;
+var socket=io.connect();
 var clients = [];
 var rules=[];
 var amIpainter = false;
@@ -321,7 +321,6 @@ function add_listener_chat(socket,real_pseudo){
 
 
 window.onload = function() {
-	socket=io.connect();
 	clients = [];
 
 		//Object for choose 
@@ -606,7 +605,6 @@ window.onload = function() {
 
 var id;
 var msg;
-var socket=io.connect();
 var clients = [];
 
 
@@ -653,16 +651,7 @@ function lobby_call() {
 	});
 }
 
-function create_game_listener() {
-	document.getElementById("btnConfirmCreate").addEventListener("click", function() {
-		var new_game = { "owner" : id, "alphabet" : undefined, "delay" : 0,  "laps" : 0, "is_private" : false };
-		/*
-			Init fields
-		*/
-		console.log("game client-created");
-		socket.emit("new_game", new_game);
-	});
-}
+
 
 document.getElementById("btnJoin").addEventListener("click", function() {
 	id = document.getElementById("nickname").value;
