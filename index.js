@@ -111,6 +111,7 @@ io.on('connection', function (socket) {
 
     socket.on("new_game", function(data) {
 	   game_id = init_game(data);
+       console.log("HEY new_game:"+ game_id);
        socket.emit("new_gameReturn", {"game_id":game_id});
     });
 
@@ -139,7 +140,10 @@ io.on('connection', function (socket) {
 
 
    socket.on("game_start", function(game_id){
-    socket.emit("game_init", {"game_id":game_id ,"rule":games[game_id].rule});
+    console.log("HEY id "+game_id);
+    var rules = games[game_id].rule;
+    console.log("HEY rules " + rules);
+    socket.emit("game_init", {"game_id":game_id, "rule": rules});
     if((games[game_id].players.size>1)&&(games[game_id].laps>0)){
         games[game_id].start();
         socket.emit("tour1", games[game_id]);
