@@ -33,7 +33,7 @@ function board(){
 	    var dessin = document.getElementById("dessin");
 	    var overlay = document.getElementById("overlay");
 	}
-	    
+
 	this.makeBoardWork=function(){
 	    var act = function(f, e) {
 	        var rect = dessin.getBoundingClientRect();
@@ -41,44 +41,44 @@ function board(){
 	        var y = e.clientY - rect.top;
 	        f.call(currentCommand, x, y);
 	    }
-	    
+
 	    overlay.addEventListener("mousemove", function(e) {
-	        act(currentCommand.move, e); 
+	        act(currentCommand.move, e);
 	    });
 	    overlay.addEventListener("mousedown", function(e) {
-	        act(currentCommand.down, e); 
-	    });    
+	        act(currentCommand.down, e);
+	    });
 	    overlay.addEventListener("mouseup", function(e) {
-	        act(currentCommand.up, e); 
-	    });                      
+	        act(currentCommand.up, e);
+	    });
 	    overlay.addEventListener("mouseout", function(e) {
-	        act(currentCommand.out, e); 
-	    });                 
-	    
-	    
+	        act(currentCommand.out, e);
+	    });
+
+
 	    var ctxBG = dessin.getContext("2d");
 	    var ctxFG = overlay.getContext("2d");
-	    
+
 	    document.getElementById("new").addEventListener("click", function(e) {
-	        ctxBG.clearRect(0, 0, ctxBG.width, ctxBG.height); 
+	        ctxBG.clearRect(0, 0, ctxBG.width, ctxBG.height);
 	        socket.emit("new",)
 	    });
-	    
-	    // Tailles des zones 
+
+	    // Tailles des zones
 	    overlay.width = dessin.width = ctxBG.width = ctxFG.width = 500;
 	    overlay.height = dessin.height = ctxBG.height = ctxFG.height = 500;
 	    // Taille du crayon
 	    ctxBG.lineCap = ctxFG.lineCap = "round";
-	    
-	    
+
+
 	    /**
 	     *  Prototype de commande (classe abstraite)
 	     */
-	    function Commande() { 
+	    function Commande() {
 	        // bouton cliqué
 	        this.isDown = false;
-	        // fillStyle pour le dessin 
-	        this.fsBG = "white", 
+	        // fillStyle pour le dessin
+	        this.fsBG = "white",
 	        // fillStyle pour le calque
 	        this.fsFG = "white";
 	        // strokeStyle pour le dessin
@@ -88,37 +88,37 @@ function board(){
 	    }
 	    // selection (paramétrage des styles)
 	    Commande.prototype.select = function() {
-	        ctxBG.fillStyle = this.fsBG; 
-	        ctxFG.fillStyle = this.fsFG; 
+	        ctxBG.fillStyle = this.fsBG;
+	        ctxFG.fillStyle = this.fsFG;
 	        ctxBG.strokeStyle = this.ssBG;
 	        ctxFG.strokeStyle = this.ssFG;
 	        currentCommand = this;
 	    };
 	    // action liée au déplacement de la souris
-	    Commande.prototype.move = function(x, y) { 
+	    Commande.prototype.move = function(x, y) {
 	        ctxFG.clearRect(0, 0, ctxFG.width, ctxFG.height);
 	    };
 	    // action liée au relâchement du bouton de la souris
-	    Commande.prototype.up = function(x, y) { 
+	    Commande.prototype.up = function(x, y) {
 	        this.isDown = false;
 	    };
 	    // action liée à l'appui sur le bouton de la souris
-	    Commande.prototype.down = function(x, y) { 
+	    Commande.prototype.down = function(x, y) {
 	        this.isDown = true;
-	    }; 
+	    };
 	    // action liée à la sortie de la souris de la zone
 	    Commande.prototype.out = function() {
 	        this.isDown = false;
 	        ctxFG.clearRect(0, 0, ctxFG.width, ctxFG.height);
 	    };
-	    
-	    
-	    /** 
+
+
+	    /**
 	     *  Commande pour tracer (dessine un point)
-	     *      au survol : affichage d'un point 
-	     *      au clic : dessin du point 
+	     *      au survol : affichage d'un point
+	     *      au clic : dessin du point
 	     */
-	    var tracer = new Commande();     
+	    var tracer = new Commande();
 	    tracer.dessiner = function(ctx, x, y) {
 	        ctx.beginPath();
 	        ctx.arc(x, y, size.value/2, 0, 2*Math.PI);
@@ -127,7 +127,7 @@ function board(){
 	    tracer.move = function(x, y) {
 	        // appel classe mère
 	        this.__proto__.move.call(this, x, y);
-	        // affichage sur le calque 
+	        // affichage sur le calque
 	        this.dessiner(ctxFG, x, y);
 	        // si bouton cliqué : impression sur la zone de dessin
 	        if (this.isDown) {
@@ -140,11 +140,11 @@ function board(){
 	        // impression sur la zone de dessin
 	        this.dessiner(ctxBG, x, y);
 	    }
-	    
-	    
-	    /** 
+
+
+	    /**
 	     *  Commande pour gommer (effacer une zone)
-	     *      au survol : affichage d'un rectangle représentant la zone à effacer 
+	     *      au survol : affichage d'un rectangle représentant la zone à effacer
 	     *      au clic : effacement de la zone
 	     */
 	    var gommer = new Commande();
@@ -161,13 +161,13 @@ function board(){
 	        ctxFG.strokeRect(x - size.value/2, y - size.value/2, size.value, size.value);
 	    }
 	    gommer.down = function(x, y) {
-	        this.__proto__.down.call(this, x, y);    
+	        this.__proto__.down.call(this, x, y);
 	        gommer.effacer(x,y);
 	    }
-	    
-	    /** 
+
+	    /**
 	     *  Commande pour tracer une ligne
-	     *      au survol si clic appuyé : ombrage de la ligne entre le point de départ et le point courant. 
+	     *      au survol si clic appuyé : ombrage de la ligne entre le point de départ et le point courant.
 	     *      au relâchement du clic : tracé de la ligne sur la zone de dessin
 	     */
 	    var ligne = new Commande();
@@ -196,10 +196,10 @@ function board(){
 	        this.__proto__.up.call(this, x, y);
 	        this.dessiner(ctxBG, x, y);
 	    }
-	    
-	    
-	    
-	    /** 
+
+
+
+	    /**
 	     *  Affectation des événements sur les boutons radios
 	     *  et detection du bouton radio en cours de sélection.
 	     */
@@ -207,13 +207,13 @@ function board(){
 	    for (var i=0; i < radios.length; i++) {
 	        var selection = function() {
 	            if (this.checked) {
-	                currentCommand = eval(this.id);  
+	                currentCommand = eval(this.id);
 	                currentCommand.select();
-	            }            
+	            }
 	        }
 	        selection.apply(radios.item(i));
 	        radios.item(i).addEventListener("change", selection);
-	    }   
+	    }
 	}
 };
 
@@ -223,11 +223,11 @@ function board(){
 function add_listener_chat(socket,real_pseudo){
 	//chat
 
-	socket.on("bienvenue", function(id) {    
+	socket.on("bienvenue", function(id) {
         if (id) {
             document.querySelector("#content main").innerHTML = "";
             document.getElementById("monMessage").value = "";
-            document.getElementById("login").innerHTML = id;
+            //document.getElementById("login").innerHTML = id;
             document.getElementById("radio2").checked = true;
         }
     });
@@ -243,7 +243,7 @@ function add_listener_chat(socket,real_pseudo){
     });
 
 
-    /** 
+    /**
      *  Connexion de l'utilisateur au chat.
      */
     function connect() {
@@ -253,22 +253,22 @@ function add_listener_chat(socket,real_pseudo){
         var user = document.getElementById("pseudo").value.trim();
         if (! user) return;
         document.getElementById("radio2").check = true;
-        id = user; 
+        id = user;
         sock.emit("login", user);
     }
 
 
-    /** 
-     *  Affichage des messages 
+    /**
+     *  Affichage des messages
      */
     function afficherMessage(data) {
         if (!id) {
-            return;   
+            return;
         }
-        bcMessages.innerHTML += "<p class='" + classe + "'>" + date + " - " + data.text + "</p>"; 
+        bcMessages.innerHTML += "<p class='" + classe + "'>" + date + " - " + data.text + "</p>";
         document.querySelector("main > p:last-child").scrollIntoView();
     };
-    
+
 
 
     function afficherListe(newList) {
@@ -278,11 +278,11 @@ function add_listener_chat(socket,real_pseudo){
 
     /**
      *  Envoyer un message
-     */ 
+     */
     function envoyer() {
-        
+
         var msg = document.getElementById("monMessage").value.trim();
-        if (!msg) return;   
+        if (!msg) return;
 
         // message privé
         var to = null;
@@ -301,7 +301,7 @@ function add_listener_chat(socket,real_pseudo){
     /**
      *  Quitter le chat et revenir à la page d'accueil.
      */
-    function quitter() { 
+    function quitter() {
         id = null;
         sock.emit("logout");
         document.getElementById("radio1").checked = true;
@@ -310,7 +310,7 @@ function add_listener_chat(socket,real_pseudo){
     document.getElementById("btnQuitter").addEventListener("click", quitter);
     document.getElementById("btnEnvoyer").addEventListener("click", envoyer);
     document.getElementById("monMessage").addEventListener("keydown", function(e) {
-        if (e.keyCode == 13) { 
+        if (e.keyCode == 13) {
             envoyer();
         }
     });
@@ -323,7 +323,7 @@ function add_listener_chat(socket,real_pseudo){
 window.onload = function() {
 	clients = [];
 
-		//Object for choose 
+		//Object for choose
 	var choose = {
 		chance : 3,
 		objGlyphes : null,
@@ -343,7 +343,7 @@ window.onload = function() {
 				if(i%16==0 && i>0){
 					docHtml += "</tr><tr>";
 				}
-				docHtml += "<td><button id=choixx"+glyphes[i]['ascii']+">"+glyphes[i]["key"]+" </button></td>"; 
+				docHtml += "<td><button id=choixx"+glyphes[i]['ascii']+">"+glyphes[i]["key"]+" </button></td>";
 			}
 			docHtml += "</tr></table>";
 			doc.innerHTML += docHtml;
@@ -360,7 +360,7 @@ window.onload = function() {
 							console.log("I SEND MESSA");
 							socket.emit("message", {"player_id":id, "game_id":game_id, "answer":this.id });
 						}
-						
+
 					}
 				})(chance));
 			}
@@ -383,13 +383,13 @@ window.onload = function() {
 		// updateResult: function(){
 		// 	document.getElementById("choixx"+result).className="correct";
 		// }
-		
+
 
 
 		initGlyphes: async function(res,isPainter){
-			if (typeof fetch !== undefined) {       
+			if (typeof fetch !== undefined) {
 			    // avec des promesses et l'instruction fetch
-			    var response = await fetch("./json/alphabet.json"); 
+			    var response = await fetch("./json/alphabet.json");
 			    if (response.status == 200) {
 			        var data = await response.json();
 			        this.objGlyphes = new Glyphes(data);
@@ -419,10 +419,10 @@ window.onload = function() {
 		socket.emit("login", id);
 		socket.on("loginReturn",function(idFinal){
 			id=idFinal;
-			document.getElementById("login").innerHTML = id;
+			//document.getElementById("login").innerHTML = id;
 		});
 		document.getElementById("content").style.display = "block";
-		document.getElementById("login").innerHTML = id;
+		//document.getElementById("login").innerHTML = id;
 		document.getElementById("login").style.display = "none";
 		lobby_call();
 	});
@@ -448,10 +448,10 @@ window.onload = function() {
 			var new_game = { owner : id, alphabet : undefined, max_delay : 0,  laps_number : 0, is_private : false };
 			/*
 				Init fields
-			*/		
-			socket.emit("new_game", new_game);			
+			*/
+			socket.emit("new_game", new_game);
 		});
-	} 
+	}
 
 	socket.on("new_gameReturn", function(data){
 		console.log("HEY new_gameReturn" + data.game_id);
@@ -524,8 +524,8 @@ window.onload = function() {
 	 *  Classe représentant l'ensemble des glyphes
 	 */
 	function Glyphes(glyphes) {
-	    
-	    /** 
+
+	    /**
 	     *  Clés des glyphes éligibles par rapport aux options actuellement sélectionnées
 	     *  (fonction privée -- interne à la classe)
 	     */
@@ -539,7 +539,7 @@ window.onload = function() {
 		                // on vérifie si la clé (elem) matche la regex définie comme valeur de la checkbox
 		                var patt = new RegExp("\\b" + cbs[i] + "\\b", "g");
 		                if (patt.test(elem)) {
-		                    return true;   
+		                    return true;
 		                }
 		            }
 		            return false;
@@ -549,12 +549,12 @@ window.onload = function() {
 		        }
 	        });
 	    }
-	    
-	    
-	    /** 
+
+
+	    /**
 	     *  Choisit trois glyphes différents entre elles et différentes de celle dont la clé
 	     *  est passée en paramètre
-	     *  @param old          String  clé du glyphe 
+	     *  @param old          String  clé du glyphe
 	     *  @param alphabet     String  alphabet considéré
 	     */
 	    this.getAllGlyphes = function(alphabet) {
@@ -572,7 +572,7 @@ window.onload = function() {
 	            // aTrouver[i] = { key: key, ascii: glyphes[alphabet][key] };
 	        }
 	        console.log("aTrouver",aTrouver);
-	        
+
 	        return aTrouver;
 	    }
 	}
@@ -605,10 +605,10 @@ document.getElementById("btnJoin").addEventListener("click", function() {
 	socket.emit("login", id);
 	socket.on("loginReturn",function(idFinal){
 		id=idFinal;
-		document.getElementById("login").innerHTML = id;
+		//document.getElementById("login").innerHTML = id;
 	});
 	document.getElementById("content").style.display = "block";
-	document.getElementById("login").innerHTML = id;
+	//document.getElementById("login").innerHTML = id;
 	document.getElementById("login").style.display = "none";
 	lobby_call();
 });
