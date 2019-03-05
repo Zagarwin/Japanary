@@ -456,6 +456,7 @@ window.onload = function() {
 	socket.on("new_gameReturn", function(data){
 		console.log("HEY new_gameReturn" + data.game_id);
 		game_id = data.game_id;
+		
 	});
 
 	document.getElementById("begin").addEventListener("click", function(){

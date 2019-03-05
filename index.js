@@ -150,6 +150,9 @@ io.on('connection', function (socket) {
         games[game_id].start();
         socket.emit("tour1", games[game_id]);
     }
+    else{
+        console.log("game can't start!!!");
+    }
    });
 
    socket.on("tour2",function(data){
