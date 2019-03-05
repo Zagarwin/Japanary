@@ -57,10 +57,10 @@ io.on('connection', function (socket) {
 
     /**
      *  Réception d'un message et transmission à tous.
-     *  @param  msg     Object  le message à transférer à tous  
+     *  @param  msg     Object  le message à transférer à tous
      */
     socket.on("message", function(data) {
-        console.log("Reçu message:"+data.answer);   
+        console.log("Reçu message:"+data.answer);
         // si jamais la date n'existe pas, on la rajoute
         date = Date.now();
         if(data.answer == games[data.game_id].result){
@@ -73,17 +73,17 @@ io.on('connection', function (socket) {
 
 
 
-    /** 
+    /**
      *  Gestion des déconnexions
      */
-    
+
     // fermeture
-    socket.on("logout", function() { 
+    socket.on("logout", function() {
         // si client était identifié (devrait toujours être le cas)
         if (currentID) {
             console.log("Sortie de l'utilisateur " + currentID);
             // envoi de l'information de déconnexion
-            socket.broadcast.emit("message", 
+            socket.broadcast.emit("message",
                 { from: null, to: null, text: currentID + " a quitté la discussion", date: Date.now() } );
                 // suppression de l'entrée
             delete clients[currentID];
@@ -94,11 +94,11 @@ io.on('connection', function (socket) {
 
 
     // déconnexion de la socket
-    socket.on("disconnect", function(reason) { 
+    socket.on("disconnect", function(reason) {
         // si client était identifié
         if (currentID) {
             // envoi de l'information de déconnexion
-            socket.broadcast.emit("message", 
+            socket.broadcast.emit("message",
                 { from: null, to: null, text: currentID + " vient de se déconnecter de l'application", date: Date.now() } );
                 // suppression de l'entrée
             delete clients[currentID];
@@ -118,15 +118,19 @@ io.on('connection', function (socket) {
     });
 
     socket.on("beginTest", function(player_id){
-        gameTest.addPerson(player_id);
+        gameTest.connectPlayer(player_id);
         gameTest.choosePainter();
         socket.emit("initClient", gameTest);
         console.log("Game is parti");
     });
 
    socket.on("get_lobby", function() {
-	console.log("games sended");
-	socket.emit("lobby", games);
+	console.log("games sended : " + games.length);
+    var games_display = [];
+    games.forEach(function(game) {
+        games_display.push({ owner:game.owner, alphabet:game.alphabet, delay:game.delay, laps:game.laps, players:game.players.length, max_players:game.max_players, id:game.id});
+    });
+	socket.emit("lobby", games_display);
    });
 
    socket.on("command",function(command){
@@ -197,10 +201,6 @@ function Game(){
     this.started = false;
     this.rule = ["hirakana"];
     this.result = null;
-
-    this.addPerson=function(p){   // à enlever
-        this.players.push(p);
-    };
 
     this.hasPerson=function(name){
         for(p in this.persons){
