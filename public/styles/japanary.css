@@ -47,7 +47,7 @@ body > div {
 #chat main {
     position: relative;
     height: calc(100% - 30px);
-    width: calc(100% - 170px);
+    width: calc(100% - 145px);
     background-color: white;
     overflow-y: scroll;
     line-height: 1.2;
@@ -93,11 +93,11 @@ body > div {
 }
         
 #chat aside {
-    width: 160px;
+    width: 130px;
     float: right;
     margin: 0px;
     padding: 5px;
-    height: calc(100% - 30px);
+    height: calc(100% - 40px);
     background-color: white;
     line-height: 1;
     font-size: 14px;

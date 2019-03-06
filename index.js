@@ -64,10 +64,10 @@ io.on('connection', function (socket) {
         // si jamais la date n'existe pas, on la rajoute
         date = Date.now();
         if(data.answer == games[data.game_id].result){
-            socket.emit("message",{"text":data.player_id+" has known the word!!! Quickly!"});
+            send_2_clients(data.game_id, "message", {"text":data.player_id+" has known the word!!! Quickly!"});
         }
         else{
-            socket.emit("message",{"text":data.player_id+" guess "+data.answer});
+            send_2_clients(data.game_id, "message", {"text":data.player_id+" guess "+data.answer});
         }
     });
 
@@ -83,9 +83,7 @@ io.on('connection', function (socket) {
         if (currentID) {
             console.log("Sortie de l'utilisateur " + currentID);
             // envoi de l'information de déconnexion
-            socket.broadcast.emit("message",
-                { from: null, to: null, text: currentID + " a quitté la discussion", date: Date.now() } );
-                // suppression de l'entrée
+            // suppression de l'entrée
             delete clients[currentID];
             // envoi de la nouvelle liste pour mise à jour
             socket.broadcast.emit("liste", Object.keys(clients));
@@ -114,14 +112,9 @@ io.on('connection', function (socket) {
     socket.on("new_game", function(data) {
 	   game_id = init_game(data);
        console.log("HEY new_game:"+ game_id);
-       socket.emit("new_gameReturn", {"game_id":game_id});
-    });
-
-    socket.on("beginTest", function(player_id){
-        gameTest.connectPlayer(player_id);
-        gameTest.choosePainter();
-        socket.emit("initClient", gameTest);
-        console.log("Game is parti");
+       socket.emit("new_gameReturn", {"game_id":game_id, "rule":games[game_id].rule});
+       socket.emit("liste", games[game_id].players);
+       socket.emit("message", {text: data.owner + " created the room", date: Date.now() });
     });
 
    socket.on("get_lobby", function() {
@@ -140,28 +133,30 @@ io.on('connection', function (socket) {
 
    socket.on("game_connect", function(whowhere) {
 	console.log("Player (" + whowhere.player + ") connected to : " + whowhere.game);
-	games[whowhere.game].connectPlayer(clients[whowhere.player]);
-    socket.emit("initClient", games[whowhere.game]);
+	games[whowhere.game].connectPlayer(whowhere.player);
+    socket.emit("initClient", {"game_id":whowhere.game, rule:games[whowhere.game].rule});
+    send_2_clients(whowhere.game,"liste",games[whowhere.game].players);
+    send_2_clients(whowhere.game,"message", {text: whowhere.player + " joins the room ", date: Date.now() });
    });
 
 
    socket.on("game_start", function(game_id){
     console.log("HEY id "+game_id);
-    var rules = games[game_id].rule;
-    console.log("HEY rules " + rules);
-    socket.emit("game_init", {"game_id":game_id, "rule": rules});
-    if((games[game_id].players.size>1)&&(games[game_id].laps>0)){
+    if((games[game_id].players.length>1)&&(games[game_id].laps>0)){
         games[game_id].start();
+        send_2_clients(game_id, "tour1", {"player_id":games[game_id].painter})
         socket.emit("tour1", games[game_id]);
     }
     else{
-        console.log("game can't start!!!");
+        console.log("game can't start!!! "+games[game_id].players.length + games[game_id].laps);
+
     }
    });
 
    socket.on("tour2",function(data){
     games[data.game_id].result=data.result;
-    socket.emit("tour3",games[data.id]);
+    console.log(games[data.game_id].result);
+    send_2_clients(data.game_id,"tour3",{"result":games[data.game_id].result})
    });
 
 
@@ -182,7 +177,7 @@ function init_game(data) {
 	new_game.delay = data.delay;
 	new_game.laps = data.laps;
 	new_game.alphabet = data.alphabet;
-	new_game.connectPlayer(clients[data.owner]);
+	new_game.connectPlayer(data.owner);
 	games.push(new_game);
 
     return new_game.id;
@@ -196,10 +191,10 @@ function Game(){
     this.painter = null;
     this.numberContinue = 0;
     this.delay = 0;
-    this.laps = 0;
+    this.laps = 3;
     this.alphabet = null;
     this.started = false;
-    this.rule = ["hirakana"];
+    this.rule = ["hiragana"];
     this.result = null;
 
     this.hasPerson=function(name){
@@ -212,7 +207,7 @@ function Game(){
     }
 
     this.start=function(){
-        choosePainter();
+        this.choosePainter();
         this.started=true;
     }
     this.choosePainter=function(){
@@ -221,11 +216,17 @@ function Game(){
     };
 
     this.connectPlayer=function(player){
-	if (this.players.length >= this.max_players) {
-		return;
-	}
-	this.players.push(player);
+    	if (this.players.length >= this.max_players) {
+    		return;
+    	}
+    	this.players.push(player);
+        console.log("ROOM "+this.id+" has pushed "+player);
     };
+}
 
-
+function send_2_clients(game_id, name, data){
+    var size = games[game_id].players.length;
+    for(var i=0; i<size; i++){
+        clients[games[game_id].players[i]].emit(name, data);
+    }
 }

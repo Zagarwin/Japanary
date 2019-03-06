@@ -8,13 +8,14 @@
 // 	}
 // };
 var myPoint=0;
-var id;
+var id = null;
 var game_id = null;
 var msg;
 var socket=io.connect();
 var clients = [];
 var rules=[];
 var amIpainter = false;
+var board1=null;
 
 function board(){
 	this.afficherToolbox=function(){
@@ -225,13 +226,14 @@ function add_listener_chat(socket,real_pseudo){
 
 	socket.on("bienvenue", function(id) {
         if (id) {
-            document.querySelector("#content main").innerHTML = "";
+            document.querySelector("#chat main").innerHTML = "";
             document.getElementById("monMessage").value = "";
             //document.getElementById("login").innerHTML = id;
             document.getElementById("radio2").checked = true;
         }
     });
     socket.on("message", function(msg) {
+    	console.log("hi, i rece message:",id);
         if (id) {
             afficherMessage(msg);
         }
@@ -265,15 +267,13 @@ function add_listener_chat(socket,real_pseudo){
         if (!id) {
             return;
         }
-        bcMessages.innerHTML += "<p class='" + classe + "'>" + date + " - " + data.text + "</p>";
+        var classe = "";
+        var bcMessages = document.querySelector("#chat main");
+        bcMessages.innerHTML += "<p class='" + classe + "'>" + " - " + data.text + "</p>";
         document.querySelector("main > p:last-child").scrollIntoView();
     };
 
 
-
-    function afficherListe(newList) {
-        document.querySelector("#content aside").innerHTML = newList.join("<br>");
-    }
 
 
     /**
@@ -292,7 +292,7 @@ function add_listener_chat(socket,real_pseudo){
             msg = msg.substring(i);
         }
         // envoi
-        socket.emit("message", { from: id, to: to, text: msg });
+        socket.emit("message", {"game_id":game_id, "answer":msg, "player_id":id});
 
         document.getElementById("monMessage").value = "";
     }
@@ -343,14 +343,14 @@ window.onload = function() {
 				if(i%16==0 && i>0){
 					docHtml += "</tr><tr>";
 				}
-				docHtml += "<td><button id=choixx"+glyphes[i]['ascii']+">"+glyphes[i]["key"]+" </button></td>";
+				docHtml += "<td><button id="+glyphes[i]['key']+">"+glyphes[i]["key"]+" </button></td>";
 			}
 			docHtml += "</tr></table>";
 			doc.innerHTML += docHtml;
 			for(var j=0; j<this.size; j++){
-				document.getElementById("choixx"+this.glyphes[j]["ascii"]).addEventListener("click",(function(result){
+				document.getElementById(this.glyphes[j]["key"]).addEventListener("click",(function(result){
 					return function(){
-						if(this.id == "choixx"+result){
+						if(this.id == result){
 							alert("NICE WP");
 						}
 						else{
@@ -366,15 +366,7 @@ window.onload = function() {
 			}
 		},
 
-		getResult: function(old){
-			var size = this.glyphes.length;
-			var res = "";
-			do{
-				res = this.glyphes[size*Math.random()|0]["ascii"];
-			}
-			while(res == old);
-			return res;
-		},
+
 
 		setResult: function(res){
 			this.result=res;
@@ -386,7 +378,7 @@ window.onload = function() {
 
 
 
-		initGlyphes: async function(res,isPainter){
+		initGlyphes: async function(){
 			if (typeof fetch !== undefined) {
 			    // avec des promesses et l'instruction fetch
 			    var response = await fetch("./json/alphabet.json");
@@ -396,12 +388,10 @@ window.onload = function() {
 			    }
 				var alphabet = rules[0];
 			    this.glyphes = this.objGlyphes.getAllGlyphes(alphabet);
-			    this.setResult(res);
+			    this.size = this.glyphes.length;
+
 			    console.log("res:",this.result);
 			    console.log("gly:",this.glyphes);
-			    if(!isPainter){
-			    	this.displayAllGlyphes(this.glyphes);
-			    }
 			}
 			else{
 				console.log("Your navigateur can not accpet fetch");
@@ -409,10 +399,15 @@ window.onload = function() {
 		}
 	}
 
+	function afficherListe(newList) {
+        document.querySelector("#chat aside").innerHTML = newList.join("<br>");
+    }
+
+
 
 	function create_game_listener() {
 		document.getElementById("btnConfirmCreate").addEventListener("click", function() {
-			var new_game = { owner : id, alphabet : undefined, max_delay : 0,  laps_number : 0, is_private : false };
+			var new_game = { owner : id, alphabet : undefined, delay : 0,  laps : 3, is_private : false };
 			/*
 				Init fields
 			*/
@@ -420,66 +415,88 @@ window.onload = function() {
 		});
 	}
 
+
+	socket.on("liste", function(liste) {
+        if (id) {
+            afficherListe(liste);
+        }
+    });
+
+
+
 	socket.on("new_gameReturn", function(data){
 		console.log("HEY new_gameReturn" + data.game_id);
 		game_id = data.game_id;
-		
+		document.getElementById("begin").style.display="block";
+		rules=data.rule;
+		board1 = new board();
+		board1.setBoard();
+		document.getElementById("chat").style.display="block";
+		choose.initGlyphes();
 	});
+
+	socket.on("initClient",function(data){
+		console.log("HAVE INIT CLIENT"+id);
+		rules=data.rule;
+		board1 = new board();
+		board1.setBoard();
+		document.getElementById("chat").style.display="block";
+		choose.initGlyphes();
+		game_id = data.game_id;
+	});
+
 
 	document.getElementById("begin").addEventListener("click", function(){
 		socket.emit("game_start", game_id);
+		document.getElementById("begin").style.display="none";
 	});
 
 
-	socket.on("game_init", function(data){
-		if(game_id == data.game_id){
-			rules = data.rules;
-		}
-	});
+
 
 	socket.on("tour1", function(data){
-		if((game_id == data.game_id)&&(id == data.player_id)){
+		if(id == data.player_id){
 			amIpainter = true;
 			document.getElementById("bc1In3").style.display = "block";
 			var res=[];
 			var r0,r1,r2;
+			console.log("chosse SIZE::" + choose.size);
 			do{
-				r0 = choose.size*Math.random();
-				r1 = choose.size*Math.random();
-				r2 = choose.size*Math.randon();
+				r0 = parseInt(choose.size * Math.random());
+				r1 = parseInt(choose.size * Math.random());
+				r2 = parseInt(choose.size * Math.random());
 			}while(r0 == r1 || r1 == r2 || r0 == r2);
-			var temp = "<tr><td><bouton id=choose"+choose.glyphes[r0]['ascii']+">"+choose.glyphes[r0]["key"]+"</td>";
-			temp += "<td><bouton id=choose"+choose.glyphes[r1]['ascii']+">"+choose.glyphes[r1]["key"]+"</td>";
-			temp += "<td><bouton id=choose"+choose.glyphes[r2]['ascii']+">"+choose.glyphes[r2]["key"]+"</td></tr>";
+			console.log("r0:",r0 );
+			var temp = "<tr><td><h3>Choose one alphabet to paint</h3></td></tr><tr><td><bouton id=choose"+choose.glyphes[r0]['key']+">"+choose.glyphes[r0]["key"]+"</td>";
+			temp += "<td><bouton id=choose"+choose.glyphes[r1]['key']+">"+choose.glyphes[r1]["key"]+"</td>";
+			temp += "<td><bouton id=choose"+choose.glyphes[r2]['key']+">"+choose.glyphes[r2]["key"]+"</td></tr>";
 			document.getElementById("table1In3").innerHTML=temp;
-			document.getElementById("choose"+choose.glyphes[r0]['ascii']).addEventListener("click",function(){
-				socket.emit("tour2",{"game_id":game_id, "result": choixx+glyphes[r0]['ascii']});
+			document.getElementById("choose"+choose.glyphes[r0]['key']).addEventListener("click",function(){
+				socket.emit("tour2",{"game_id":game_id, "result": choose.glyphes[r0]['key']});
+				document.getElementById("bc1In3").style.display = "none";
 			});
-			document.getElementById("choose"+choose.glyphes[r1]['ascii']).addEventListener("click",function(){
-				socket.emit("tour2",{"game_id":game_id, "result": choixx+glyphes[r1]['ascii']});
+			document.getElementById("choose"+choose.glyphes[r1]['key']).addEventListener("click",function(){
+				socket.emit("tour2",{"game_id":game_id, "result": choose.glyphes[r1]['key']});
+				document.getElementById("bc1In3").style.display = "none";
 			});
-			document.getElementById("choose"+choose.glyphes[r2]['ascii']).addEventListener("click",function(){
-				socket.emit("tour2",{"game_id":game_id, "result": choixx+glyphes[r2]['ascii']});
+			document.getElementById("choose"+choose.glyphes[r2]['key']).addEventListener("click",function(){
+				socket.emit("tour2",{"game_id":game_id, "result": choose.glyphes[r2]['key']});
+				document.getElementById("bc1In3").style.display = "none";
 			});
-			document.getElementById("bc1In3").style.display = "none";
 		}
 	});
 
 	socket.on("tour3",function(data){
 		if(amIpainter){
-			var board1 = new board();
 			board1.afficherToolbox();
-			board1.setBoard();
 			board1.makeBoardWork();
-			choose.initGlyphes(data.result,amIpainter);
-			console.log(choose.getResult());
+			document.getElementById("chat").style.display="none";
 		}
 		else{
-			var board2 = new board();
-			board2.setBoard();
-			choose.initGlyphes(data.result,amIpainter);
-			document.getElementById("chat").style.display="block";
 			add_listener_chat(socket,id);
+			choose.setResult(data.result);
+			console.log(data.result);
+			choose.displayAllGlyphes(choose.glyphes);
 		}
 		// socket.emit("begin",{owner:id, glyphes:choose.glyphes, result:choose.result })
 	});
@@ -492,7 +509,7 @@ window.onload = function() {
 	 *  Classe représentant l'ensemble des glyphes
 	 */
 	function Glyphes(glyphes) {
-
+		this.glyphes = glyphes;
 	    /**
 	     *  Clés des glyphes éligibles par rapport aux options actuellement sélectionnées
 	     *  (fonction privée -- interne à la classe)
@@ -502,7 +519,7 @@ window.onload = function() {
 	        return Object.keys(glyphes[alphabet]).filter(function(elem, _index, _array) {
 	            // closure qui s'appuie sur les checkbox qui ont été sélectionnées (cbs)
 	            var len = cbs.length;
-	            if(cbs.length>0){
+	            if(cbs.length>1){
 		            for (var i=1; i < cbs.length; i++) {
 		                // on vérifie si la clé (elem) matche la regex définie comme valeur de la checkbox
 		                var patt = new RegExp("\\b" + cbs[i] + "\\b", "g");
@@ -560,7 +577,6 @@ window.onload = function() {
 
 
 
-var id;
 var msg;
 var clients = [];
 
@@ -637,7 +653,7 @@ function game_display(game) {
 	game_cell.onclick = dynamic_game_click;
 	function dynamic_game_click() {
 		console.log("game clicked!");
-		socket.emit("game_connect", { player : id, game : game.id });
+		socket.emit("game_connect", { "player" : id, "game" : game.id });
 	}
 
 }
@@ -665,19 +681,6 @@ function is_included(game){
     return found;
 };
 
-socket.on("initClient",function(game){
-    if(!is_included(game)){
-        console.log("I'm not in the game :(");
-        return;
-    }
-    select_pane("choosingAlphabet");
-    if(id==game.painter){
-        console.log("I am the painter!");
-    }
-    else{
-        console.log("I am not the painter..");
-        hide_pane("toolbox");
-    }
-});
+
 
 }
