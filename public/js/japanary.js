@@ -1,18 +1,9 @@
-// function button_onclick(){
-// 	console.log(this.id);
-// 	if(this.id == choose.result){
-// 		alert("ok");
-// 	}
-// 	else{
-// 		alert("gg");
-// 	}
-// };
 var myPoint=0;
 var id = null;
 var game_id = null;
 var msg;
 var socket=io.connect();
-var clients = [];
+var clients = null;
 var rules=[];
 var amIpainter = false;
 var board1=null;
@@ -23,32 +14,29 @@ var maxtime = 30;
 var result_japonese;
 
 
+
 function shadow(){
 	this.setShadow=function(){
 		document.getElementById("choosingAlphabet").style.display="block";
 		document.getElementById("dessin2").style.display="block";
 		var dessin2 = document.getElementById("dessin2");
 		var ctxBG2 = dessin2.getContext("2d");
+		ctxBG2.clearRect(0, 0, ctxBG2.width, ctxBG2.height);
 		ctxBG2.fillStyle = "white";
 	    ctxBG2.strokeStyle = "white";
 		socket.on("commandeReturn", function(data){
-			console.log("I HEARD COMMANDE RETURN:",data);
 			if(data.name=="new"){
-				console.log("I HEARD NEW:",data);
 				ctxBG2.clearRect(0, 0, ctxBG2.width, ctxBG2.height);
 			}
 			else if(data.name=="tracer"){
-				console.log("I HEARD TRACER:",data);
 				ctxBG2.beginPath();
 		        ctxBG2.arc(data.x, data.y, data.size/2, 0, 2*Math.PI);
 		        ctxBG2.fill();
 			}
 			else if(data.name=="gommer"){
-				console.log("I HEARD GOMMER:",data);
 				ctxBG2.clearRect(data.x - data.size/2, data.y - data.size/2, data.size, data.size);
 			}
 			else if(data.name=="ligne"){
-				console.log("I HEARD LIGNE:",data);
 				ctxBG2.lineWidth = data.size;
 		        ctxBG2.beginPath();
 		        ctxBG2.moveTo(data.startX, data.startY);
@@ -92,6 +80,8 @@ function board(){
 		document.getElementById("overlay").style.display="block ";
 	    var dessin = document.getElementById("dessin");
 	    var overlay = document.getElementById("overlay");
+	   	var ctxBG = dessin.getContext("2d");
+	    ctxBG.clearRect(0, 0, ctxBG.width, ctxBG.height);
 	}
 
 	this.makeBoardWork=function(){
@@ -119,6 +109,7 @@ function board(){
 
 	    var ctxBG = dessin.getContext("2d");
 	    var ctxFG = overlay.getContext("2d");
+
 
 	    if(document.getElementById("new")!=null){
 		    document.getElementById("new").addEventListener("click", function(e) {
@@ -305,11 +296,7 @@ function add_listener_chat(socket,real_pseudo){
             afficherMessage(msg);
         }
     });
-    socket.on("liste", function(liste) {
-        if (id) {
-            afficherListe(liste);
-        }
-    });
+
 
 
     /**
@@ -318,7 +305,6 @@ function add_listener_chat(socket,real_pseudo){
     function connect() {
         console.log(sock);
 
-        // recupération du pseudo
         var user = document.getElementById("pseudo").value.trim();
         if (! user) return;
         document.getElementById("radio2").check = true;
@@ -350,15 +336,7 @@ function add_listener_chat(socket,real_pseudo){
 
         var msg = document.getElementById("monMessage").value.trim();
         if (!msg) return;
-
-        // message privé
-        var to = null;
-        if (msg.startsWith("@")) {
-            var i = msg.indexOf(" ");
-            to = msg.substring(1, i);
-            msg = msg.substring(i);
-        }
-        // envoi
+        console.log("You have :" +chance);
         if(chance>0){
         	socket.emit("message", {"game_id":game_id, "answer":msg, "player_id":id});
         	chance=chance-1;
@@ -376,7 +354,7 @@ function add_listener_chat(socket,real_pseudo){
      */
     function quitter() {
         id = null;
-        sock.emit("logout");
+        sock.emit("logout",{game_id:game_id, player_id:id});
         document.getElementById("radio1").checked = true;
     };
 
@@ -394,9 +372,7 @@ function add_listener_chat(socket,real_pseudo){
 
 
 window.onload = function() {
-	clients = [];
-
-		//Object for choose
+	//Object for choose
 	var choose = {
 		objGlyphes : null,
 		alphabet : null,
@@ -422,14 +398,7 @@ window.onload = function() {
 			for(var j=0; j<this.size; j++){
 				document.getElementById(this.glyphes[j]["key"]).addEventListener("click",(function(result){
 					return function(){
-						if(this.id == result){
-							alert("NICE WP");
-						}
-						else{
-							console.log("LOST");
-						}
 						if(chance>0){
-							console.log("I SEND MESSA");
 							socket.emit("message", {"player_id":id, "game_id":game_id, "answer":this.id });
 							chance = chance-1;
 						}
@@ -465,9 +434,6 @@ window.onload = function() {
 				var alphabet = rules[0];
 			    this.glyphes = this.objGlyphes.getAllGlyphes(alphabet);
 			    this.size = this.glyphes.length;
-
-			    console.log("res:",this.result);
-			    console.log("gly:",this.glyphes);
 			}
 			else{
 				console.log("Your navigateur can not accpet fetch");
@@ -476,7 +442,11 @@ window.onload = function() {
 	}
 
 	function afficherListe(newList) {
-        document.querySelector("#chat aside").innerHTML = newList.join("<br>");
+		var corp="";
+		for(var i in newList){
+			corp += i +" : "+newList[i]+"<br>";
+		}
+        document.querySelector("#chat aside").innerHTML = corp;
     }
 
 
@@ -509,6 +479,10 @@ window.onload = function() {
 	});
 
 	socket.on("liste", function(liste) {
+		var size=liste.length;
+		for(var i=0; i<size; i++){
+			client[liste[i]]
+		}
         if (id) {
             afficherListe(liste);
         }
@@ -517,7 +491,6 @@ window.onload = function() {
 
 
 	socket.on("new_gameReturn", function(data){
-		console.log("HEY new_gameReturn" + data.game_id);
 		game_id = data.game_id;
 		document.getElementById("begin").style.display="block";
 		rules=data.rule;
@@ -528,11 +501,11 @@ window.onload = function() {
 	});
 
 	socket.on("initClient",function(data){
-		console.log("HAVE INIT CLIENT"+id);
 		rules=data.rule;
 		board1 = new board();
 		shadow1 = new shadow();
 		shadow1.setShadow();
+		document.getElementById("dessin2").style.display="block";
 		document.getElementById("chat").style.display="block";
 		choose.initGlyphes();
 		game_id = data.game_id;
@@ -541,14 +514,16 @@ window.onload = function() {
 
 	document.getElementById("begin").addEventListener("click", function(){
 		socket.emit("game_start", game_id);
-		document.getElementById("begin").style.display="none";
+		socket.on("game_start_fail",function(data){
+			alert(data.raison);
+		})
 	});
 
 
 
 
 	socket.on("tour1", function(data){
-		console.log("id: "+id+"    dataid:"+data.player_id);
+		document.getElementById("begin").style.display="none";
 		if(id == data.player_id){
 			amIpainter = true;
 			document.getElementById("bc1In3").style.display = "block";
@@ -585,12 +560,15 @@ window.onload = function() {
 	socket.on("tour3",function(data){
 		maxtime=30;
 		if(amIpainter){
+			board1.setBoard();
 			board1.afficherToolbox();
 			board1.makeBoardWork();
 			document.getElementById("chat").style.display="none";
 			document.getElementById("watchJaponese").style.display="block";
 		}
 		else{
+			document.getElementById("chat").style.display="block";
+			shadow1 = new shadow();
 			shadow1.setShadow();
 			add_listener_chat(socket,id);
 			choose.setResult(data.result);
@@ -692,14 +670,7 @@ window.onload = function() {
 	        var size =eligible.length;
 	        for (var i=0; i < size; i++) {
 	        	aTrouver[i]={key: eligible[i], ascii:glyphes[alphabet][eligible[i]]};
-	            // do {
-	            //     key = eligible[Math.random() * eligible.length | 0];
-	            // }
-	            // while (aEviter.indexOf(key) >= 0);
-	            // aEviter.push(key);
-	            // aTrouver[i] = { key: key, ascii: glyphes[alphabet][key] };
 	        }
-	        console.log("aTrouver",aTrouver);
 
 	        return aTrouver;
 	    }
@@ -710,18 +681,10 @@ window.onload = function() {
 
 
 
-// setTimeout( function(){
-// }, 1 * 1000 );
-// console.log(choose.objGlyphes.getAllGlyphes("les2"));
-
-// End of Yufei's Part
-
-
 
 
 
 var msg;
-var clients = [];
 
 document.getElementById("btnCreate").addEventListener("click", function() {
 	id = document.getElementById("nickname").value;
@@ -741,7 +704,6 @@ document.getElementById("btnJoin").addEventListener("click", function() {
 		return;
 	}
 	connect(id);
-	console.log("> 1");
 	lobby_call();
 });
 
@@ -759,7 +721,7 @@ function hide_pane(pane) {
 
 function select_pane(pane, close_others=true) {
 	var panes = ["login","settings","lobby","choosingAlphabet"];
-	if (!panes.includes(pane)) { console.log("pane not found"); return; }
+	if (!panes.includes(pane)) { return; }
     if (!close_others) {
         document.getElementById(element).style.display = "block";
         return;
@@ -768,7 +730,6 @@ function select_pane(pane, close_others=true) {
 		var modif;
   		if (element == pane) {
 			modif = "block";
-            console.log("selected pane : " + element);
 		}
 		else {
 			modif = "none";
@@ -778,12 +739,10 @@ function select_pane(pane, close_others=true) {
 }
 
 function lobby_display(games) {
-	console.log("> 4");
 	var l_size = games.length;
 	for (var i = 0; i < l_size; i++) {
 		game_display(games[i]);
 	}
-	console.log("> 5");
 }
 
 function game_display(game) {
@@ -795,19 +754,15 @@ function game_display(game) {
 	game_tab.appendChild(game_cell);
 	game_cell.onclick = dynamic_game_click;
 	function dynamic_game_click() {
-		console.log("game clicked!");
 		socket.emit("game_connect", { "player" : id, "game" : game.id });
 	}
 
 }
 
 function lobby_call() {
-	console.log("> 2");
 	select_pane("lobby");
 	socket.emit("get_lobby");
-	console.log("> 2.5");
 	socket.on("lobby", function(games) {
-		console.log("> 3");
 		lobby_display(games);
 	});
 }
@@ -817,7 +772,6 @@ function is_included(game){
     var found = false;
     game.players.forEach(function(p) {
         if(p.id == id){
-            console.log("player found");
             found = true;
         }
     });

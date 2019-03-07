@@ -37,20 +37,15 @@ io.on('connection', function (socket) {
      */
     socket.on("login", function(id) {
         while (clients[id]) {
-            id = id + "_";
+            id = id + "@";
         }
         currentID = id;
-        currentPerson = new Person(currentID);
         console.log("add client "+currentID);
         clients[currentID] = socket;
 
         socket.emit("loginReturn",currentID);
 
-
         console.log("Nouvel utilisateur : " + currentID);
-        // envoi aux autres clients
-        // socket.broadcast.emit("message", { from: null, to: null, text: currentID + " a rejoint la discussion", date: Date.now() } );
-        // envoi de la nouvelle liste à tous les clients connectés
     });
 
 
@@ -78,32 +73,50 @@ io.on('connection', function (socket) {
      */
 
     // fermeture
-    socket.on("logout", function() {
-        // si client était identifié (devrait toujours être le cas)
-        if (currentID) {
-            console.log("Sortie de l'utilisateur " + currentID);
-            // envoi de l'information de déconnexion
-            // suppression de l'entrée
-            delete clients[currentID];
-            // envoi de la nouvelle liste pour mise à jour
-            socket.broadcast.emit("liste", Object.keys(clients));
+    socket.on("logout", function(data) {
+        delete clients[data.player_id];
+        if(games[data.game_id].owner==data.player_id){
+            if(games[data.game_id].changeOwner()=="empty_room"){
+                delete games[data.game_id];
+            }
+            delete games[data.game_id].clients[data.player_id];
+            delete gemes[data.game_id].points[data.player_id];
+            send_2_clients(data.game_id, "message", {text:"The owner of this room "+data.player_id+" has leaved. Now the new ower is "+games[data.game_id].owner});
+            send_2_clients(data.game_id, "liste", {points:games[data.game_id].points});
         }
+        delete games[data.game_id].clients[data.player_id];
+        delete gemes[data.game_id].points[data.player_id];
+        send_2_clients(data.game_id, "message", {text: data.player_id+" leave the room."});
+        send_2_clients(data.game_id, "liste", {points:games[data.game_id].points});
     });
 
 
     // déconnexion de la socket
     socket.on("disconnect", function(reason) {
-        // si client était identifié
-        if (currentID) {
-            // envoi de l'information de déconnexion
-            socket.broadcast.emit("message",
-                { from: null, to: null, text: currentID + " vient de se déconnecter de l'application", date: Date.now() } );
-                // suppression de l'entrée
-            delete clients[currentID];
-            // envoi de la nouvelle liste pour mise à jour
-            socket.broadcast.emit("liste", Object.keys(clients));
-        }
-        console.log("Client déconnecté");
+        // if (currentID) {
+        //     console.log("disdis::",currentID);
+        //     var game_id=-1;
+        //     for(var i=0; i<games.length; i++){
+        //         if(games[i].hasPerson(currentID)){
+        //             game_id=games[i].id;
+        //         }
+        //     }
+        //     console.log("DISDIS::",game_id);
+        //     delete clients[currentID];
+        //     if(games[game_id].owner==currentID){
+        //         if(games[game_id].changeOwner()=="empty_room"){
+        //             delete games[game_id];
+        //         }
+        //         delete games[game_id].clients[currentID];
+        //         delete gemes[game_id].points[currentID];
+        //         send_2_clients(game_id, "message", {text:"The owner of this room "+currentID+" has leaved. Now the new ower is "+games[game_id].owner});
+        //         send_2_clients(game_id, "liste", {points:games[game_id].points});
+        //     }
+        //     delete games[game_id].clients[currentID];
+        //     delete gemes[game_id].points[currentID];
+        //     send_2_clients(game_id, "message", {text: currentID+" leave the room."});
+        //     send_2_clients(game_id, "liste", {points:games[game_id].points});
+        // }
     });
 
 
@@ -112,12 +125,11 @@ io.on('connection', function (socket) {
     socket.on("new_game", function(data) {
 	   game_id = init_game(data);
        socket.emit("new_gameReturn", {"game_id":game_id, "rule":games[game_id].rule});
-       socket.emit("liste", games[game_id].players);
+       socket.emit("liste", games[game_id].points);
        socket.emit("message", {text: data.owner + " created the room", date: Date.now() });
     });
 
    socket.on("get_lobby", function() {
-	console.log("games sended : " + games.length);
     var games_display = [];
     games.forEach(function(game) {
         games_display.push({ owner:game.owner, alphabet:game.alphabet, delay:game.delay, laps:game.laps, players:game.players.length, max_players:game.max_players, id:game.id});
@@ -134,26 +146,23 @@ io.on('connection', function (socket) {
 	console.log("Player (" + whowhere.player + ") connected to : " + whowhere.game);
 	games[whowhere.game].connectPlayer(whowhere.player);
     socket.emit("initClient", {"game_id":whowhere.game, rule:games[whowhere.game].rule});
-    send_2_clients(whowhere.game,"liste",games[whowhere.game].players);
+    send_2_clients(whowhere.game,"liste",games[whowhere.game].points);
     send_2_clients(whowhere.game,"message", {text: whowhere.player + " joins the room ", date: Date.now() });
    });
 
 
    socket.on("game_start", function(game_id){
-    console.log("HEY id "+game_id);
-    if((games[game_id].players.length>1)&&(games[game_id].laps>0)){
+    if((games[game_id].players.length>1)){
         games[game_id].start();
         send_2_clients(game_id, "tour1", {"player_id":games[game_id].painter});
     }
     else{
-        console.log("game can't start!!! "+games[game_id].players.length + games[game_id].laps);
-
+        socket.emit("game_start_fail", {raison: "Begin game must have at least 2 persons."});
     }
    });
 
    socket.on("tour2",function(data){
     games[data.game_id].result=data.result;
-    console.log(games[data.game_id].result);
     send_2_clients(data.game_id,"tour3",{"result":games[data.game_id].result})
    });
 
@@ -162,7 +171,6 @@ io.on('connection', function (socket) {
     if(games[data.game_id].started==true){
         games[data.game_id].choosePainter();
         if(games[data.game_id].players.length>1){
-            console.log("IM IN TOUR4");
             send_2_clients(data.game_id, "tour1",  {"player_id":games[game_id].painter});
         }
         else{
@@ -185,10 +193,6 @@ io.on('connection', function (socket) {
 
 });
 
-function Person(name){
-    this.id=name;
-    this.score=0;
-}
 
 var max_id = 0;
 
@@ -209,6 +213,7 @@ function init_game(data) {
 function Game(){
     this.owner = null;
     this.players=[];
+    this.points={};
     this.max_players = 5;
     this.id = max_id++;
     this.painter = null;
@@ -222,8 +227,9 @@ function Game(){
     this.lap_current = 1;
 
     this.hasPerson=function(name){
-        for(p in this.persons){
-            if(p.id == name){
+        var l=this.players.length;
+        for(var i=0;i<l;i++){
+            if(this.players[i]==name){
                 return true;
             }
         }
@@ -250,11 +256,23 @@ function Game(){
     		return;
     	}
     	this.players.push(player);
+        this.points[player]=0;
     };
+    this.changeOwner=function(){
+        if(this.players.length>0){
+            var i=0;
+            do{
+                i++;
+            }while(this.players[(this.numberContinue+i)%this.players.length]==null)
+            this.owner=this.players[(this.numberContinue+i)%this.players.length];
+        }
+        else{
+            return "empty_room";
+        }
+    }
 }
 
 function send_2_clients(game_id, name, data){
-    console.log("im send_2_clients: ", game_id);
     var size = games[game_id].players.length;
     for(var i=0; i<size; i++){
         clients[games[game_id].players[i]].emit(name, data);
