@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>The JapanAry</title>
+    <title>The Japanary</title>
     <link rel="stylesheet" href="./styles/japanary.css">
     <script src="/socket.io/socket.io.js"></script>
     <script src="./js/japanary.js"></script>
@@ -13,7 +13,7 @@
 
 <div id="login" style="display: block;">
 <p>Choose your nickname : <br>
-            <input type="text" id="nickname" placeholder="Enter your nickname" size="30">
+            <input type="text" id="nickname" placeholder="Enter your nickname" size="30"><br>
             <input type="button" value="Join a Party" id="btnJoin"> <br>
 	    <input type="button" value="Create a Party" id="btnCreate">
 </p>
@@ -32,21 +32,7 @@
   <div id="choix">
   </div>
 
-   <div id="bc1In3" style="display: none;">
-    <table id="table1In3">
-    </table>
-   </div>
-
-   <button id="begin" style="display: none;">
-  Begin Game
-  </button>
-
-</div>
-
-
-
-
-<div id="chat">
+  <div id="chat">
     <h3>Clients connectes</h3>
     <aside>
     </aside>
@@ -57,30 +43,63 @@
         <input type="button" value="Envoyer" id="btnEnvoyer">
         <input type="button" value="Quitter" id="btnQuitter">
     </footer>
+  </div>
+
+  <div id="timer" style="display: none;">
+  </div>
+
+  <div id="state">
+    State: Waitting owner make this game begin!
+  </div>
+
+  <div id="lap">
+    Round: 1
+  </div>
+
+
+
+   <div id="bc1In3" style="display: none;">
+    <table id="table1In3">
+    </table>
+   </div>
+
+  <button id="begin" style="display: none;">
+    Begin Game
+  </button>
+
+  <button id="watchJaponese" style="display:none;">
+    Watch the japanese but you pay half of points of this round
+  </button>
+
+  <div id="resultJaponese" style="display: none";>
+  </div>
+
 </div>
+
+
+
+
+
 
 <div id="settings" style="display: none;">
 <p> New Game : <br>
 Max Delay :
-<input type="number" id="delay" min="5" max="60" step = "5">
+<input type="number" id="delay" min="5" max="60" step = "5" value="30">
 <br>
 Laps number :
-<input type="number" id="laps" min="3" max="50">
+<input type="number" id="laps" min="3" max="50" value="3">
 <br>
  <form>
   <input type="radio" name="is_private" value="false" checked> Public<br>
   <input type="radio" name="is_private" value="true"> Private<br>
 </form> <br>
 
- <div>
+    <div>
         <p>Alphabet :</p>
             <label><input type="radio" name="radGlyphe" value="hiragana" checked> hiragana</label>
             <label><input type="radio" name="radGlyphe" value="katakana"> katakana</label>
     </div>
 
-<!--     <div hidden>
-        <label><input type="checkbox" value="[aiueon]" checked disabled> a, i, u, e, o, n</label>
-    </div> -->
     <div>
         <p>Suffixes :</p>
         <label><input type="checkbox" value="[b-z]{1,2}a"> .a</label>

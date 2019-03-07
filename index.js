@@ -111,7 +111,6 @@ io.on('connection', function (socket) {
 
     socket.on("new_game", function(data) {
 	   game_id = init_game(data);
-       console.log("HEY new_game:"+ game_id);
        socket.emit("new_gameReturn", {"game_id":game_id, "rule":games[game_id].rule});
        socket.emit("liste", games[game_id].players);
        socket.emit("message", {text: data.owner + " created the room", date: Date.now() });
@@ -144,8 +143,7 @@ io.on('connection', function (socket) {
     console.log("HEY id "+game_id);
     if((games[game_id].players.length>1)&&(games[game_id].laps>0)){
         games[game_id].start();
-        send_2_clients(game_id, "tour1", {"player_id":games[game_id].painter})
-        socket.emit("tour1", games[game_id]);
+        send_2_clients(game_id, "tour1", {"player_id":games[game_id].painter});
     }
     else{
         console.log("game can't start!!! "+games[game_id].players.length + games[game_id].laps);
@@ -158,6 +156,30 @@ io.on('connection', function (socket) {
     console.log(games[data.game_id].result);
     send_2_clients(data.game_id,"tour3",{"result":games[data.game_id].result})
    });
+
+
+   socket.on("tour4",function(data){
+    if(games[data.game_id].started==true){
+        games[data.game_id].choosePainter();
+        if(games[data.game_id].players.length>1){
+            console.log("IM IN TOUR4");
+            send_2_clients(data.game_id, "tour1",  {"player_id":games[game_id].painter});
+        }
+        else{
+            socket.emit("gameOverByError",{raison:"Game over because the players must more than 2!"});
+        }
+    }
+   });
+
+
+   socket.on("roomOver",function(data){
+    delete games[data.game_id];
+   });
+
+
+   socket.on("commande",function(data){
+    send_2_clients(data.game_id, "commandeReturn", data);
+   })
 
 
 
@@ -177,6 +199,7 @@ function init_game(data) {
 	new_game.delay = data.delay;
 	new_game.laps = data.laps;
 	new_game.alphabet = data.alphabet;
+    new_game.rule = data.rule;
 	new_game.connectPlayer(data.owner);
 	games.push(new_game);
 
@@ -194,8 +217,9 @@ function Game(){
     this.laps = 3;
     this.alphabet = null;
     this.started = false;
-    this.rule = ["hiragana"];
+    this.rule = [];
     this.result = null;
+    this.lap_current = 1;
 
     this.hasPerson=function(name){
         for(p in this.persons){
@@ -207,12 +231,18 @@ function Game(){
     }
 
     this.start=function(){
-        this.choosePainter();
         this.started=true;
+        this.choosePainter();
     }
     this.choosePainter=function(){
-        this.painter=this.players[this.numberContinue%this.players.length];
-        this.numberContinue++;
+        if(this.started){
+            this.painter=this.players[this.numberContinue%this.players.length];
+            this.lap_current = parseInt(this.numberContinue / this.players.length);
+            this.numberContinue++;
+            if(this.numberContinue==this.laps*this.players.length){
+                this.started = false;
+            }
+        }
     };
 
     this.connectPlayer=function(player){
@@ -220,11 +250,11 @@ function Game(){
     		return;
     	}
     	this.players.push(player);
-        console.log("ROOM "+this.id+" has pushed "+player);
     };
 }
 
 function send_2_clients(game_id, name, data){
+    console.log("im send_2_clients: ", game_id);
     var size = games[game_id].players.length;
     for(var i=0; i<size; i++){
         clients[games[game_id].players[i]].emit(name, data);

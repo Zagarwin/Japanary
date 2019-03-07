@@ -16,6 +16,11 @@ var clients = [];
 var rules=[];
 var amIpainter = false;
 var board1=null;
+var chance=0;
+var answer=null;
+var maxtime = 30; 
+var result_japonese;
+
 
 function board(){
 	this.afficherToolbox=function(){
@@ -43,27 +48,54 @@ function board(){
 	        f.call(currentCommand, x, y);
 	    }
 
-	    overlay.addEventListener("mousemove", function(e) {
-	        act(currentCommand.move, e);
-	    });
-	    overlay.addEventListener("mousedown", function(e) {
-	        act(currentCommand.down, e);
-	    });
-	    overlay.addEventListener("mouseup", function(e) {
-	        act(currentCommand.up, e);
-	    });
-	    overlay.addEventListener("mouseout", function(e) {
-	        act(currentCommand.out, e);
-	    });
+	    if(amIpainter){
+		    overlay.addEventListener("mousemove", function(e) {
+		        act(currentCommand.move, e);
+		    });
+		    overlay.addEventListener("mousedown", function(e) {
+		        act(currentCommand.down, e);
+		    });
+		    overlay.addEventListener("mouseup", function(e) {
+		        act(currentCommand.up, e);
+		    });
+		    overlay.addEventListener("mouseout", function(e) {
+		        act(currentCommand.out, e);
+		    });
+		}
+		// else{
+		// 	socket.on("commandeReturn", function(data){
+		// 		if(data.acti=="move"){
+		// 			var temp=data.currentCommand;
+		// 			console.log("I feel client is moving:",temp.move);
+		// 			act(data.currentCommand.move, data.pos);
+		// 		}
+		// 		else if(data.acti=="mousedown"){
+		// 			act(data.currentCommand.down, data.pos);
+		// 		}
+		// 		else if(data.acti=="up"){
+		// 			act(data.currentCommand.up, data.pos);
+		// 		}
+		// 		else if(data.acti=="out"){
+	 //        		act(data.currentCommand.out, data.pos);
+		// 		}
+		// 	});
+		// }
+		
 
 
 	    var ctxBG = dessin.getContext("2d");
 	    var ctxFG = overlay.getContext("2d");
 
-	    document.getElementById("new").addEventListener("click", function(e) {
-	        ctxBG.clearRect(0, 0, ctxBG.width, ctxBG.height);
-	        socket.emit("new",)
-	    });
+	    if(document.getElementById("new")!=null){
+		    document.getElementById("new").addEventListener("click", function(e) {
+		        ctxBG.clearRect(0, 0, ctxBG.width, ctxBG.height);
+		        socket.emit("commande",{game_id:game_id,name:"clearRect", x:0, y:0, width: ctxBG.width, height:ctxBG.height});
+		    });
+		}
+
+		socket.on("commandeReturn", function(data){
+			console.log("I feel commande Return", data);
+		});
 
 	    // Tailles des zones
 	    overlay.width = dessin.width = ctxBG.width = ctxFG.width = 500;
@@ -233,7 +265,6 @@ function add_listener_chat(socket,real_pseudo){
         }
     });
     socket.on("message", function(msg) {
-    	console.log("hi, i rece message:",id);
         if (id) {
             afficherMessage(msg);
         }
@@ -292,7 +323,13 @@ function add_listener_chat(socket,real_pseudo){
             msg = msg.substring(i);
         }
         // envoi
-        socket.emit("message", {"game_id":game_id, "answer":msg, "player_id":id});
+        if(chance>0){
+        	socket.emit("message", {"game_id":game_id, "answer":msg, "player_id":id});
+        	chance=chance-1;
+        }
+        else{
+        	alert("You have used all your 3 chances!!")
+        }
 
         document.getElementById("monMessage").value = "";
     }
@@ -325,7 +362,6 @@ window.onload = function() {
 
 		//Object for choose
 	var choose = {
-		chance : 3,
 		objGlyphes : null,
 		alphabet : null,
 		glyphes : null,
@@ -337,7 +373,7 @@ window.onload = function() {
 			var chance = 3;
 			this.size = glyphes.length;
 			var doc = document.getElementById("choix");
-			var docHtml = "<table><tr>";
+			var docHtml = "<table id=allGlyphes><tr>";
 			for(var i=0; i<this.size; i++){
 				document.getElementById("choosingAlphabet").style.display="block";
 				if(i%16==0 && i>0){
@@ -356,9 +392,13 @@ window.onload = function() {
 						else{
 							console.log("LOST");
 						}
-						if(chance>=0){
+						if(chance>0){
 							console.log("I SEND MESSA");
 							socket.emit("message", {"player_id":id, "game_id":game_id, "answer":this.id });
+							chance = chance-1;
+						}
+						else{
+							alert("You have guessed already 3 times!");
 						}
 
 					}
@@ -407,7 +447,18 @@ window.onload = function() {
 
 	function create_game_listener() {
 		document.getElementById("btnConfirmCreate").addEventListener("click", function() {
-			var new_game = { owner : id, alphabet : undefined, delay : 0,  laps : 3, is_private : false };
+			var cbs = document.querySelectorAll("#settings input[type=checkbox]:checked");
+			var alphabet = document.querySelector('#settings input[name=radGlyphe]:checked').value;	
+			var isPrivate = document.querySelector('#settings input[name=is_private]:checked').value;
+			var delay = document.getElementById("delay").value;
+			var laps = document.getElementById("laps").value;
+			var rules = [];
+			rules.push(alphabet);
+			for (var i=0; i < cbs.length; i++) {
+				rules.push(cbs[i].value)
+            }	
+			var new_game = { owner : id, alphabet : alphabet, delay : delay,  laps : laps, is_private : isPrivate , rule: rules};
+			document.getElementById("settings").style.display="none";
 			/*
 				Init fields
 			*/
@@ -415,6 +466,11 @@ window.onload = function() {
 		});
 	}
 
+
+	document.getElementById("watchJaponese").addEventListener("click",function(){
+		document.getElementById("resultJaponese").style.display="block";
+		document.getElementById("resultJaponese").innerHTML="<h1>&#"+result_japonese+"</h1>";
+	});
 
 	socket.on("liste", function(liste) {
         if (id) {
@@ -455,51 +511,103 @@ window.onload = function() {
 
 
 	socket.on("tour1", function(data){
+		console.log("id: "+id+"    dataid:"+data.player_id);
 		if(id == data.player_id){
 			amIpainter = true;
 			document.getElementById("bc1In3").style.display = "block";
 			var res=[];
 			var r0,r1,r2;
-			console.log("chosse SIZE::" + choose.size);
 			do{
 				r0 = parseInt(choose.size * Math.random());
 				r1 = parseInt(choose.size * Math.random());
 				r2 = parseInt(choose.size * Math.random());
 			}while(r0 == r1 || r1 == r2 || r0 == r2);
-			console.log("r0:",r0 );
-			var temp = "<tr><td><h3>Choose one alphabet to paint</h3></td></tr><tr><td><bouton id=choose"+choose.glyphes[r0]['key']+">"+choose.glyphes[r0]["key"]+"</td>";
-			temp += "<td><bouton id=choose"+choose.glyphes[r1]['key']+">"+choose.glyphes[r1]["key"]+"</td>";
-			temp += "<td><bouton id=choose"+choose.glyphes[r2]['key']+">"+choose.glyphes[r2]["key"]+"</td></tr>";
+			var temp = "<tr><td><h3>Choose one alphabet to paint:</h3></td><br></tr><tr><td><button id=choose"+choose.glyphes[r0]['key']+">"+choose.glyphes[r0]["key"]+"</td></tr>";
+			temp += "<tr><td><button id=choose"+choose.glyphes[r1]['key']+">"+choose.glyphes[r1]["key"]+"</td></tr>";
+			temp += "<tr><td><button id=choose"+choose.glyphes[r2]['key']+">"+choose.glyphes[r2]["key"]+"</td></tr>";
 			document.getElementById("table1In3").innerHTML=temp;
 			document.getElementById("choose"+choose.glyphes[r0]['key']).addEventListener("click",function(){
+				result_japonese = choose.glyphes[r0]['ascii'];
 				socket.emit("tour2",{"game_id":game_id, "result": choose.glyphes[r0]['key']});
 				document.getElementById("bc1In3").style.display = "none";
 			});
 			document.getElementById("choose"+choose.glyphes[r1]['key']).addEventListener("click",function(){
+				result_japonese = choose.glyphes[r1]['ascii'];
 				socket.emit("tour2",{"game_id":game_id, "result": choose.glyphes[r1]['key']});
 				document.getElementById("bc1In3").style.display = "none";
 			});
 			document.getElementById("choose"+choose.glyphes[r2]['key']).addEventListener("click",function(){
+				result_japonese = choose.glyphes[r2]['ascii'];
 				socket.emit("tour2",{"game_id":game_id, "result": choose.glyphes[r2]['key']});
 				document.getElementById("bc1In3").style.display = "none";
 			});
 		}
+		document.getElementById("state").innerHTML="Waitting painter choose the word!"
 	});
 
 	socket.on("tour3",function(data){
+		maxtime=30;
 		if(amIpainter){
 			board1.afficherToolbox();
 			board1.makeBoardWork();
 			document.getElementById("chat").style.display="none";
+			document.getElementById("watchJaponese").style.display="block";
 		}
 		else{
+			board1.afficherToolbox();
+			document.getElementById("toolbox").style.display="none";
+			board1.makeBoardWork();
 			add_listener_chat(socket,id);
 			choose.setResult(data.result);
+			answer=data.result;
 			console.log(data.result);
 			choose.displayAllGlyphes(choose.glyphes);
 		}
+		document.getElementById("state").innerHTML="Game is running!"
+
+
+        function countDown(){
+		  var timer=null;
+		  timer=setInterval(function(){
+			if (maxtime >= 0) {
+                seconds = Math.floor(maxtime % 60);
+                msg = "Reste Time: "+ seconds + " s";
+                document.getElementById("timer").innerHTML = msg;
+                maxtime = maxtime-1;
+            } 
+            else{
+                clearInterval(timer);
+                if(amIpainter){
+                	amIpainter=false;
+                	document.getElementById("toolbox").style.display="none";
+                	document.getElementById("bc1In3").style.display = "none";
+                	document.getElementById("watchJaponese").style.display="none";
+                	document.getElementById("resultJaponese").style.display="none";
+                	board1 = new board();
+					board1.setBoard();
+                	alert("Your turn is over!");
+                	socket.emit("tour4",{game_id:game_id,player_id:id, point:myPoint});
+                }
+                else{
+                	document.getElementById("allGlyphes").style.display="none";
+                	alert("Time's up! Answer is: "+answer);
+                }
+            }
+		  },1000);
+		  if(timer<=0){
+		    clearInterval(timer);
+		  }
+		}
+		document.getElementById("timer").style.display="block";
+		countDown();
 		// socket.emit("begin",{owner:id, glyphes:choose.glyphes, result:choose.result })
 	});
+
+
+	socket.on("gameOverByError",function(data){
+		alert(data.raison);
+		socket.emit("roomOver", {game_id:game_id});
+	})
 
 
 
