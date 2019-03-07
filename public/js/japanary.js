@@ -16,16 +16,70 @@ var clients = [];
 var rules=[];
 var amIpainter = false;
 var board1=null;
+var shadow1=null;
 var chance=0;
 var answer=null;
 var maxtime = 30; 
 var result_japonese;
 
 
+function shadow(){
+	this.setShadow=function(){
+		document.getElementById("choosingAlphabet").style.display="block";
+		document.getElementById("dessin2").style.display="block";
+		var dessin2 = document.getElementById("dessin2");
+		var ctxBG2 = dessin2.getContext("2d");
+		ctxBG2.fillStyle = "white";
+	    ctxBG2.strokeStyle = "white";
+		socket.on("commandeReturn", function(data){
+			console.log("I HEARD COMMANDE RETURN:",data);
+			if(data.name=="new"){
+				console.log("I HEARD NEW:",data);
+				ctxBG2.clearRect(0, 0, ctxBG2.width, ctxBG2.height);
+			}
+			else if(data.name=="tracer"){
+				console.log("I HEARD TRACER:",data);
+				ctxBG2.beginPath();
+		        ctxBG2.arc(data.x, data.y, data.size/2, 0, 2*Math.PI);
+		        ctxBG2.fill();
+			}
+			else if(data.name=="gommer"){
+				console.log("I HEARD GOMMER:",data);
+				ctxBG2.clearRect(data.x - data.size/2, data.y - data.size/2, data.size, data.size);
+			}
+			else if(data.name=="ligne"){
+				console.log("I HEARD LIGNE:",data);
+				ctxBG2.lineWidth = data.size;
+		        ctxBG2.beginPath();
+		        ctxBG2.moveTo(data.startX, data.startY);
+		        ctxBG2.lineTo(data.x, data.y);
+		        ctxBG2.stroke();
+			}
+		});
+	}
+
+	this.hideShadow=function(){
+		var dessin2 = document.getElementById("dessin2");
+		var ctxBG2 = dessin2.getContext("2d");
+		ctxBG2.clearRect(0, 0, ctxBG2.width, ctxBG2.height);
+		document.getElementById("dessin2").style.display="none";
+	}
+}
+
+
 function board(){
 	this.afficherToolbox=function(){
 		toolboxHtml='<div id="toolbox"><input type="radio" name="radCommande" id="tracer" checked> <label for="tracer"></label><input type="radio" name="radCommande" id="gommer"> <label for="gommer"></label><input type="radio" name="radCommande" id="ligne">  <label for="ligne"></label><input type="range" id="size" min="1" max="50" value="5"><div id="new"></div></div>';
 		document.getElementById("box").innerHTML=toolboxHtml;
+	}
+
+	this.hideBoard=function(){
+		var dessin = document.getElementById("dessin");
+		var ctxBG = dessin.getContext("2d");
+		ctxBG.clearRect(0, 0, ctxBG.width, ctxBG.height);
+		document.getElementById("dessin").style.display="none ";
+		document.getElementById("overlay").style.display="none ";
+
 	}
 
 
@@ -48,39 +102,19 @@ function board(){
 	        f.call(currentCommand, x, y);
 	    }
 
-	    if(amIpainter){
-		    overlay.addEventListener("mousemove", function(e) {
-		        act(currentCommand.move, e);
-		    });
-		    overlay.addEventListener("mousedown", function(e) {
-		        act(currentCommand.down, e);
-		    });
-		    overlay.addEventListener("mouseup", function(e) {
-		        act(currentCommand.up, e);
-		    });
-		    overlay.addEventListener("mouseout", function(e) {
-		        act(currentCommand.out, e);
-		    });
-		}
-		// else{
-		// 	socket.on("commandeReturn", function(data){
-		// 		if(data.acti=="move"){
-		// 			var temp=data.currentCommand;
-		// 			console.log("I feel client is moving:",temp.move);
-		// 			act(data.currentCommand.move, data.pos);
-		// 		}
-		// 		else if(data.acti=="mousedown"){
-		// 			act(data.currentCommand.down, data.pos);
-		// 		}
-		// 		else if(data.acti=="up"){
-		// 			act(data.currentCommand.up, data.pos);
-		// 		}
-		// 		else if(data.acti=="out"){
-	 //        		act(data.currentCommand.out, data.pos);
-		// 		}
-		// 	});
-		// }
-		
+	    overlay.addEventListener("mousemove", function(e) {
+	        act(currentCommand.move, e);
+	    });
+	    overlay.addEventListener("mousedown", function(e) {
+	        act(currentCommand.down, e);
+	    });
+	    overlay.addEventListener("mouseup", function(e) {
+	        act(currentCommand.up, e);
+	    });
+	    overlay.addEventListener("mouseout", function(e) {
+	        act(currentCommand.out, e);
+	    });
+				
 
 
 	    var ctxBG = dessin.getContext("2d");
@@ -89,13 +123,10 @@ function board(){
 	    if(document.getElementById("new")!=null){
 		    document.getElementById("new").addEventListener("click", function(e) {
 		        ctxBG.clearRect(0, 0, ctxBG.width, ctxBG.height);
-		        socket.emit("commande",{game_id:game_id,name:"clearRect", x:0, y:0, width: ctxBG.width, height:ctxBG.height});
+		        socket.emit("commande",{game_id:game_id,name:"new", x:0, y:0, size:0});
 		    });
 		}
 
-		socket.on("commandeReturn", function(data){
-			console.log("I feel commande Return", data);
-		});
 
 	    // Tailles des zones
 	    overlay.width = dessin.width = ctxBG.width = ctxFG.width = 500;
@@ -165,6 +196,7 @@ function board(){
 	        // si bouton cliqué : impression sur la zone de dessin
 	        if (this.isDown) {
 	            this.dessiner(ctxBG, x, y);
+	            socket.emit("commande", {game_id:game_id, name:"tracer", x:x, y:y, size:size.value});
 	        }
 	    }
 	    tracer.down = function(x, y) {
@@ -172,6 +204,7 @@ function board(){
 	        this.__proto__.down.call(this, x, y);
 	        // impression sur la zone de dessin
 	        this.dessiner(ctxBG, x, y);
+	        socket.emit("commande", {game_id:game_id, name:"tracer", x:x, y:y, size:size.value});
 	    }
 
 
@@ -190,12 +223,14 @@ function board(){
 	        ctxFG.lineWidth = 1;
 	        if (this.isDown) {
 	            this.effacer(x, y);
+	            socket.emit("commande",{game_id:game_id,name:"gommer", x:x, y:y, size:size.value});
 	        }
 	        ctxFG.strokeRect(x - size.value/2, y - size.value/2, size.value, size.value);
 	    }
 	    gommer.down = function(x, y) {
 	        this.__proto__.down.call(this, x, y);
 	        gommer.effacer(x,y);
+	        socket.emit("commande",{game_id:game_id,name:"gommer", x:x, y:y, size:size.value});
 	    }
 
 	    /**
@@ -228,6 +263,7 @@ function board(){
 	    ligne.up = function(x, y) {
 	        this.__proto__.up.call(this, x, y);
 	        this.dessiner(ctxBG, x, y);
+	        socket.emit("commande",{game_id:game_id,name:"ligne", x:x, y:y, size:size.value, startX:startX, startY:startY});
 	    }
 
 
@@ -495,7 +531,8 @@ window.onload = function() {
 		console.log("HAVE INIT CLIENT"+id);
 		rules=data.rule;
 		board1 = new board();
-		board1.setBoard();
+		shadow1 = new shadow();
+		shadow1.setShadow();
 		document.getElementById("chat").style.display="block";
 		choose.initGlyphes();
 		game_id = data.game_id;
@@ -554,9 +591,7 @@ window.onload = function() {
 			document.getElementById("watchJaponese").style.display="block";
 		}
 		else{
-			board1.afficherToolbox();
-			document.getElementById("toolbox").style.display="none";
-			board1.makeBoardWork();
+			shadow1.setShadow();
 			add_listener_chat(socket,id);
 			choose.setResult(data.result);
 			answer=data.result;
@@ -583,13 +618,13 @@ window.onload = function() {
                 	document.getElementById("bc1In3").style.display = "none";
                 	document.getElementById("watchJaponese").style.display="none";
                 	document.getElementById("resultJaponese").style.display="none";
-                	board1 = new board();
-					board1.setBoard();
+                	board1.hideBoard();
                 	alert("Your turn is over!");
                 	socket.emit("tour4",{game_id:game_id,player_id:id, point:myPoint});
                 }
                 else{
                 	document.getElementById("allGlyphes").style.display="none";
+                	shadow1.hideShadow();
                 	alert("Time's up! Answer is: "+answer);
                 }
             }
