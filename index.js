@@ -60,7 +60,6 @@ io.on('connection', function (socket) {
         date = Date.now();
         if(data.answer == games[data.game_id].result){
             send_2_clients(data.game_id, "message", {"text":data.player_id+" has known the word!!! Quickly!"});
-            games[data.game_id].playerIsDone();  // Ce joueur ne joue plus
         }
         else{
             send_2_clients(data.game_id, "message", {"text":data.player_id+" guess "+data.answer});
@@ -124,7 +123,7 @@ io.on('connection', function (socket) {
 
 
     socket.on("new_game", function(data) {
-	   game_id = init_game(data);
+       game_id = init_game(data);
        socket.emit("new_gameReturn", {"game_id":game_id, "rule":games[game_id].rule});
        socket.emit("liste", games[game_id].points);
        socket.emit("message", {text: data.owner + " created the room", date: Date.now() });
@@ -135,7 +134,7 @@ io.on('connection', function (socket) {
     games.forEach(function(game) {
         games_display.push({ owner:game.owner, alphabet:game.alphabet, delay:game.delay, laps:game.laps, players:game.players.length, max_players:game.max_players, id:game.id});
     });
-	socket.emit("lobby", games_display);
+    socket.emit("lobby", games_display);
    });
 
    socket.on("command",function(command){
@@ -144,8 +143,8 @@ io.on('connection', function (socket) {
    });
 
    socket.on("game_connect", function(whowhere) {
-	console.log("Player (" + whowhere.player + ") connected to : " + whowhere.game);
-	games[whowhere.game].connectPlayer(whowhere.player);
+    console.log("Player (" + whowhere.player + ") connected to : " + whowhere.game);
+    games[whowhere.game].connectPlayer(whowhere.player);
     socket.emit("initClient", {"game_id":whowhere.game, rule:games[whowhere.game].rule});
     send_2_clients(whowhere.game,"liste",games[whowhere.game].points);
     send_2_clients(whowhere.game,"message", {text: whowhere.player + " joins the room ", date: Date.now() });
@@ -164,7 +163,6 @@ io.on('connection', function (socket) {
 
    socket.on("tour2",function(data){
     games[data.game_id].result=data.result;
-    games[data.game_id].launchTimer();
     send_2_clients(data.game_id,"tour3",{"result":games[data.game_id].result})
    });
 
@@ -192,13 +190,10 @@ io.on('connection', function (socket) {
    });
 
    socket.on("I_invite", function(data){
-        if(clients[data.to]!=null){
-            console.log("invite OK");
-            clients[data.to].emit("invite_me", {from: data.from, game_id:game_id});
-        }
-    });
-   socket.on("i_am_done", function(g_id) {
-       games[g_id].playerIsDone();  // Un joueur ne joue plus
+    if(clients[data.to]!=null){
+        console.log("invite OK");
+        clients[data.to].emit("invite_me", {from: data.from, game_id:game_id});
+    }
    });
 
 
@@ -210,17 +205,16 @@ var max_id = 0;
 
 function init_game(data) {
     new_game = new Game();
-	new_game.owner = data.owner;
-	new_game.delay = data.delay;
-	new_game.laps = data.laps;
-	new_game.alphabet = data.alphabet;
+    new_game.owner = data.owner;
+    new_game.delay = data.delay;
+    new_game.laps = data.laps;
+    new_game.alphabet = data.alphabet;
     new_game.rule = data.rule;
-	new_game.connectPlayer(data.owner);
-	games.push(new_game);
+    new_game.connectPlayer(data.owner);
+    games.push(new_game);
 
     return new_game.id;
 }
-
 
 function Game(){
     this.owner = null;
@@ -237,17 +231,6 @@ function Game(){
     this.rule = [];
     this.result = null;
     this.lap_current = 1;
-    this.left_playing = -1;
-    this.timer = null;
-    this.remainingTime = 30;
-
-    this.playerIsDone=function() {
-        console.log("a player is done");
-        this.left_playing--;
-        if (this.left_playing == 0) {
-            this.contiue();
-        }
-    }
 
     this.hasPerson=function(name){
         var l=this.players.length;
@@ -263,24 +246,6 @@ function Game(){
         this.started=true;
         this.choosePainter();
     }
-
-    this.contiue=function(){
-        console.log("game continue");
-        clearInterval(this.timer);
-        this.remainingTime = 30;
-        if(this.started==true){
-            this.choosePainter();
-            if(this.players.length>1){
-                console.log("send tour 1");
-                send_2_clients(this.id, "tour1",  {"player_id":this.painter});
-            }
-            else{
-                socket.emit("gameOverByError",{raison:"Game over because the players must more than 2!"});
-            }
-        }
-        this.left_playing = this.players.length - 1;
-    }
-
     this.choosePainter=function(){
         if(this.started){
             this.painter=this.players[this.numberContinue%this.players.length];
@@ -293,12 +258,11 @@ function Game(){
     };
 
     this.connectPlayer=function(player){
-    	if (this.players.length >= this.max_players) {
-    		return;
-    	}
-    	this.players.push(player);
+        if (this.players.length >= this.max_players) {
+            return;
+        }
+        this.players.push(player);
         this.points[player]=0;
-        this.left_playing++;
     };
     this.changeOwner=function(){
         if(this.players.length>0){
@@ -311,19 +275,10 @@ function Game(){
         else{
             return "empty_room";
         }
-    };
+    }
     this.updatePoints=function(name,new_point){
         this.points[name]=new_point;
-    };
-
-    this.launchTimer=function() {
-        this.timer=setInterval(function() {
-            this.remainingTime--;
-            if (this.remainingTime == 0) {
-                this.contiue();
-            }
-        }, 1000);
-    };
+    }
 }
 
 function send_2_clients(game_id, name, data){
@@ -332,5 +287,3 @@ function send_2_clients(game_id, name, data){
         clients[games[game_id].players[i]].emit(name, data);
     }
 }
-
-
