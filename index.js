@@ -192,10 +192,11 @@ io.on('connection', function (socket) {
    });
 
    socket.on("I_invite", function(data){
-    if(clients[data.to]!=null){
-        console.log("invite OK");
-        clients[data.to].emit("invite_me", {from: data.from, game_id:game_id});
-    }
+        if(clients[data.to]!=null){
+            console.log("invite OK");
+            clients[data.to].emit("invite_me", {from: data.from, game_id:game_id});
+        }
+    });
    socket.on("i_am_done", function(g_id) {
        games[g_id].playerIsDone();  // Un joueur ne joue plus
    });
@@ -310,10 +311,11 @@ function Game(){
         else{
             return "empty_room";
         }
-    }
+    };
     this.updatePoints=function(name,new_point){
         this.points[name]=new_point;
-    }
+    };
+
     this.launchTimer=function() {
         this.timer=setInterval(function() {
             this.remainingTime--;
@@ -321,7 +323,7 @@ function Game(){
                 this.contiue();
             }
         }, 1000);
-    }
+    };
 }
 
 function send_2_clients(game_id, name, data){
@@ -330,3 +332,5 @@ function send_2_clients(game_id, name, data){
         clients[games[game_id].players[i]].emit(name, data);
     }
 }
+
+
