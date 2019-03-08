@@ -187,8 +187,14 @@ io.on('connection', function (socket) {
 
    socket.on("commande",function(data){
     send_2_clients(data.game_id, "commandeReturn", data);
-   })
+   });
 
+   socket.on("I_invite", function(data){
+    if(clients[data.to]!=null){
+        console.log("invite OK");
+        clients[data.to].emit("invite_me", {from: data.from, game_id:game_id});
+    }
+   });
 
 
 });
@@ -269,6 +275,9 @@ function Game(){
         else{
             return "empty_room";
         }
+    }
+    this.updatePoints=function(name,new_point){
+        this.points[name]=new_point;
     }
 }
 

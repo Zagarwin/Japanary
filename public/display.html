@@ -19,10 +19,34 @@
 </p>
 </div>
 
+<div id="beInvite" style="display: none;">
+  <h3> An invite from your friend: </h3><br>
+  <h2 id="inviteMsg"></h2><br>
+  <input type="button" value="Yes" id="btnYes"><br>
+  <input type="button" value="No" id="btnNo"><br>
+</div>
+
+
+
+
+<div id="head_lobby" style="display: none;">
+  <h3> There are the rooms in the server now! You can join a public room with a simple click! </h3>
+</div> 
 <table id="lobby" style="display: none;">
 </table>
 
 <div id="choosingAlphabet" style="display: none;">
+
+  <div id="invite" style="display: none;">
+    <h3> You can invite your friend into room here! </h3><br>
+    <h4> Enter your friend's nickname: </h4>
+    <input type="text" id="invite_who" placeholder="Enter nickname of your friend" size="30"><br>
+    <input type="button" value="Invite" id="btnInvite"><br>
+    <input type="button" value="Cancel" id="btnCancel"><br>
+  </div>
+
+
+
   <div id="content" >     
     <canvas id="dessin" width="500" height="500" style="display: none"></canvas>
     <canvas id="overlay" width="500" height="500" style="display: none"></canvas>
@@ -67,6 +91,10 @@
 
   <button id="begin" style="display: none;">
     Begin Game
+  </button>
+
+  <button id="displayInvite" style="display: none;">
+    Invite
   </button>
 
   <button id="watchJaponese" style="display:none;">

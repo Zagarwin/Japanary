@@ -353,9 +353,9 @@ function add_listener_chat(socket,real_pseudo){
      *  Quitter le chat et revenir à la page d'accueil.
      */
     function quitter() {
-        id = null;
         sock.emit("logout",{game_id:game_id, player_id:id});
-        document.getElementById("radio1").checked = true;
+        lobby_call();
+
     };
 
     document.getElementById("btnQuitter").addEventListener("click", quitter);
@@ -399,7 +399,7 @@ window.onload = function() {
 				document.getElementById(this.glyphes[j]["key"]).addEventListener("click",(function(result){
 					return function(){
 						if(chance>0){
-							socket.emit("message", {"player_id":id, "game_id":game_id, "answer":this.id });
+							socket.emit("message", {"player_id":id, "game_id":game_id, "answer":this.id , time:maxtime});
 							chance = chance-1;
 						}
 						else{
@@ -493,6 +493,7 @@ window.onload = function() {
 	socket.on("new_gameReturn", function(data){
 		game_id = data.game_id;
 		document.getElementById("begin").style.display="block";
+		document.getElementById("displayInvite").style.display="block";
 		rules=data.rule;
 		board1 = new board();
 		board1.setBoard();
@@ -519,11 +520,37 @@ window.onload = function() {
 		})
 	});
 
+	document.getElementById("displayInvite").addEventListener("click", function(){
+		document.getElementById("invite").style.display="block";
+	});
+
+	document.getElementById("btnInvite").addEventListener("click", function(){
+		var who = document.getElementById("invite_who").value.trim();
+		socket.emit("I_invite", {game_id:game_id, from:id, to:who});
+		document.getElementById("invite").style.display="none";
+	});
+
+	document.getElementById("btnCancel").addEventListener("click", function(){
+		document.getElementById("invite").style.display="none";
+	});
+
+	socket.on("invite_me", function(data){
+		var beInv = document.getElementById("beInvite");
+		beInv.style.display="block";
+		document.getElementById("inviteMsg").innerHTML=data.from+" invite you to join his room: "+data.game_id;
+		document.getElementById("btnYes").addEventListener("click",function(){
+			socket.emit("game_connect", { "player" : id, "game" : data.game_id });
+		});
+		document.getElementById("btnYes").addEventListener("click",function(){
+			document.getElementById("beInvite").style.display="none";
+		});
+	});
 
 
 
 	socket.on("tour1", function(data){
 		document.getElementById("begin").style.display="none";
+		document.getElementById("displayInvite").style.display="none";
 		if(id == data.player_id){
 			amIpainter = true;
 			document.getElementById("bc1In3").style.display = "block";
@@ -591,7 +618,6 @@ window.onload = function() {
             else{
                 clearInterval(timer);
                 if(amIpainter){
-                	amIpainter=false;
                 	document.getElementById("toolbox").style.display="none";
                 	document.getElementById("bc1In3").style.display = "none";
                 	document.getElementById("watchJaponese").style.display="none";
@@ -599,6 +625,7 @@ window.onload = function() {
                 	board1.hideBoard();
                 	alert("Your turn is over!");
                 	socket.emit("tour4",{game_id:game_id,player_id:id, point:myPoint});
+                	amIpainter=false;
                 }
                 else{
                 	document.getElementById("allGlyphes").style.display="none";
@@ -740,6 +767,7 @@ function select_pane(pane, close_others=true) {
 
 function lobby_display(games) {
 	var l_size = games.length;
+	document.getElementById("head_lobby").style.display="block";
 	for (var i = 0; i < l_size; i++) {
 		game_display(games[i]);
 	}
@@ -755,6 +783,7 @@ function game_display(game) {
 	game_cell.onclick = dynamic_game_click;
 	function dynamic_game_click() {
 		socket.emit("game_connect", { "player" : id, "game" : game.id });
+		document.getElementById("head_lobby").style.display="none";
 	}
 
 }
