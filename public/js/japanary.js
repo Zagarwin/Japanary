@@ -10,9 +10,9 @@ var board1=null;
 var shadow1=null;
 var chance=0;
 var answer=null;
-var maxtime = 30; 
+var maxtime = 30;
 var result_japonese;
-
+var timer = null;
 
 
 function shadow(){
@@ -104,7 +104,7 @@ function board(){
 	    overlay.addEventListener("mouseout", function(e) {
 	        act(currentCommand.out, e);
 	    });
-				
+
 
 
 	    var ctxBG = dessin.getContext("2d");
@@ -340,6 +340,9 @@ function add_listener_chat(socket,real_pseudo){
         if(chance>0){
         	socket.emit("message", {"game_id":game_id, "answer":msg, "player_id":id});
         	chance=chance-1;
+			if (chance == 0) {
+				socket.emit("i_am_done", game_id);
+			}
         }
         else{
         	alert("You have used all your 3 chances!!")
@@ -401,6 +404,9 @@ window.onload = function() {
 						if(chance>0){
 							socket.emit("message", {"player_id":id, "game_id":game_id, "answer":this.id , time:maxtime});
 							chance = chance-1;
+							if (chance == 0) {
+								socket.emit("i_am_done", game_id);
+							}
 						}
 						else{
 							alert("You have guessed already 3 times!");
@@ -454,7 +460,7 @@ window.onload = function() {
 	function create_game_listener() {
 		document.getElementById("btnConfirmCreate").addEventListener("click", function() {
 			var cbs = document.querySelectorAll("#settings input[type=checkbox]:checked");
-			var alphabet = document.querySelector('#settings input[name=radGlyphe]:checked').value;	
+			var alphabet = document.querySelector('#settings input[name=radGlyphe]:checked').value;
 			var isPrivate = document.querySelector('#settings input[name=is_private]:checked').value;
 			var delay = document.getElementById("delay").value;
 			var laps = document.getElementById("laps").value;
@@ -462,7 +468,7 @@ window.onload = function() {
 			rules.push(alphabet);
 			for (var i=0; i < cbs.length; i++) {
 				rules.push(cbs[i].value)
-            }	
+            }
 			var new_game = { owner : id, alphabet : alphabet, delay : delay,  laps : laps, is_private : isPrivate , rule: rules};
 			document.getElementById("settings").style.display="none";
 			/*
@@ -549,9 +555,12 @@ window.onload = function() {
 
 
 	socket.on("tour1", function(data){
+		console.log("tour1 : received");
 		document.getElementById("begin").style.display="none";
 		document.getElementById("displayInvite").style.display="none";
+		clearInterval(timer);
 		if(id == data.player_id){
+			console.log("you are the painter");
 			amIpainter = true;
 			document.getElementById("bc1In3").style.display = "block";
 			var res=[];
@@ -607,14 +616,13 @@ window.onload = function() {
 
 
         function countDown(){
-		  var timer=null;
 		  timer=setInterval(function(){
 			if (maxtime >= 0) {
                 seconds = Math.floor(maxtime % 60);
                 msg = "Reste Time: "+ seconds + " s";
                 document.getElementById("timer").innerHTML = msg;
                 maxtime = maxtime-1;
-            } 
+            }
             else{
                 clearInterval(timer);
                 if(amIpainter){
@@ -624,8 +632,6 @@ window.onload = function() {
                 	document.getElementById("resultJaponese").style.display="none";
                 	board1.hideBoard();
                 	alert("Your turn is over!");
-                	socket.emit("tour4",{game_id:game_id,player_id:id, point:myPoint});
-                	amIpainter=false;
                 }
                 else{
                 	document.getElementById("allGlyphes").style.display="none";
