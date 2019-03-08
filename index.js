@@ -60,6 +60,7 @@ io.on('connection', function (socket) {
         date = Date.now();
         if(data.answer == games[data.game_id].result){
             send_2_clients(data.game_id, "message", {"text":data.player_id+" has known the word!!! Quickly!"});
+            games[data.game_id].playerIsDone();  // Ce joueur ne joue plus
         }
         else{
             send_2_clients(data.game_id, "message", {"text":data.player_id+" guess "+data.answer});
@@ -163,6 +164,7 @@ io.on('connection', function (socket) {
 
    socket.on("tour2",function(data){
     games[data.game_id].result=data.result;
+    games[data.game_id].launchTimer();
     send_2_clients(data.game_id,"tour3",{"result":games[data.game_id].result})
    });
 
@@ -189,6 +191,9 @@ io.on('connection', function (socket) {
     send_2_clients(data.game_id, "commandeReturn", data);
    })
 
+   socket.on("i_am_done", function(g_id) {
+       games[g_id].playerIsDone();  // Un joueur ne joue plus
+   });
 
 
 });
@@ -210,6 +215,7 @@ function init_game(data) {
     return new_game.id;
 }
 
+
 function Game(){
     this.owner = null;
     this.players=[];
@@ -225,6 +231,17 @@ function Game(){
     this.rule = [];
     this.result = null;
     this.lap_current = 1;
+    this.left_playing = -1;
+    this.timer = null;
+    this.remainingTime = 30;
+
+    this.playerIsDone=function() {
+        console.log("a player is done");
+        this.left_playing--;
+        if (this.left_playing == 0) {
+            this.contiue();
+        }
+    }
 
     this.hasPerson=function(name){
         var l=this.players.length;
@@ -240,6 +257,24 @@ function Game(){
         this.started=true;
         this.choosePainter();
     }
+
+    this.contiue=function(){
+        console.log("game continue");
+        clearInterval(this.timer);
+        this.remainingTime = 30;
+        if(this.started==true){
+            this.choosePainter();
+            if(this.players.length>1){
+                console.log("send tour 1");
+                send_2_clients(this.id, "tour1",  {"player_id":this.painter});
+            }
+            else{
+                socket.emit("gameOverByError",{raison:"Game over because the players must more than 2!"});
+            }
+        }
+        this.left_playing = this.players.length - 1;
+    }
+
     this.choosePainter=function(){
         if(this.started){
             this.painter=this.players[this.numberContinue%this.players.length];
@@ -257,6 +292,7 @@ function Game(){
     	}
     	this.players.push(player);
         this.points[player]=0;
+        this.left_playing++;
     };
     this.changeOwner=function(){
         if(this.players.length>0){
@@ -269,6 +305,14 @@ function Game(){
         else{
             return "empty_room";
         }
+    }
+    this.launchTimer=function() {
+        this.timer=setInterval(function() {
+            this.remainingTime--;
+            if (this.remainingTime == 0) {
+                this.contiue();
+            }
+        }, 1000);
     }
 }
 
